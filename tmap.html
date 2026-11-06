@@ -932,7 +932,7 @@ nativeCatch(client.init());
  *  ['vp',t,zoom,panX,panY]                マップのズーム・パン
  *  ['ho',t,id,kind] / ['hx',t,id,dwellMs] マップの要素に乗る・離れる（滞在時間）
  *  ['dg',t,ids,mx,my] / ['df',t,ids,mx,my] マップの要素をつかむ・放す
- *  ['sc',t,x,y,target] ['rs',t,w,h] ['vs',t,state] ['fo',t] ['bl',t] ['lv',t] ['en',t] ['on',t] ['of',t] ['or',t,angle]
+ *  ['sc',t,x,y,target] ['rs',t,w,h] ['vs',t,state] ['fo',t] ['bl',t] ['lv',t,cx,cy] ['en',t,cx,cy] ['on',t] ['of',t] ['or',t,angle]
  */
 const nativeTelemetry=(()=>{
   const T={cfg:null,buf:[],seq:0,dropped:0,timer:null,sending:false,started:false,lastMove:0,lastWheel:0,lastScroll:0,lastVp:0,keysDown:new Map(),hover:new Map(),retry:2000,cy:null};
@@ -965,7 +965,8 @@ const nativeTelemetry=(()=>{
       addEventListener('dblclick',e=>rec(['dc',now(),Math.round(e.clientX),Math.round(e.clientY),target(e.target)]),opt);
       addEventListener('contextmenu',e=>rec(['cm',now(),Math.round(e.clientX),Math.round(e.clientY),target(e.target)]),opt);
       addEventListener('wheel',e=>{const t=now();if(t-T.lastWheel<50)return;T.lastWheel=t;rec(['wh',t,Math.round(e.deltaX),Math.round(e.deltaY),Math.round(e.clientX),Math.round(e.clientY),target(e.target)]);},opt);
-      document.documentElement.addEventListener('mouseleave',()=>rec(['lv',now()]),opt);document.documentElement.addEventListener('mouseenter',()=>rec(['en',now()]),opt);
+      // 窓（文書）そのものから出た・入ったときだけ。capture だと中の要素の出入りまで拾うため、相手が無いときに限る
+      document.addEventListener('mouseout',e=>{if(!e.relatedTarget)rec(['lv',now(),Math.round(e.clientX),Math.round(e.clientY)]);},opt);document.addEventListener('mouseover',e=>{if(!e.relatedTarget)rec(['en',now(),Math.round(e.clientX),Math.round(e.clientY)]);},opt);
     }
     if(c.keys){
       addEventListener('keydown',e=>{if(isSecret(e.target))return;if(!e.repeat)T.keysDown.set(e.code||e.key,now());rec(['kd',now(),c.keyValues?cut(e.key,20):(e.key&&e.key.length===1?'char':cut(e.key,20)),e.code,mods(e),e.repeat?1:0,field(e.target)]);},opt);

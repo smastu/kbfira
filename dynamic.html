@@ -760,7 +760,9 @@ Logger.shouldSkip=()=>false;
 const nativeOriginalCompose=Analyzer.composePropositions;
 Analyzer.composePropositions=function(map){const concepts=map?.concepts;if(map?.conceptMap&&map.concepts_ext?.length)map.concepts=concepts.concat(map.concepts_ext.filter(c=>!concepts.some(v=>v.cid===c.cid)));try{return nativeOriginalCompose.call(this,map);}finally{if(map&&concepts)map.concepts=concepts;}};
 const originalBeacon=navigator.sendBeacon.bind(navigator);
-navigator.sendBeacon=(url,data)=>{if(String(url).endsWith('logApi/log')){const raw=Object.fromEntries(data.entries());raw.username=client.user.user_id;client.event(raw);return true;}return originalBeacon(url,data);};
+navigator.sendBeacon=(url,data)=>{if(String(url).endsWith('logApi/log')){const raw=Object.fromEntries(data.entries());raw.username=client.user.user_id;nativeTagTask(raw);client.event(raw);return true;}return originalBeacon(url,data);};
+// 原版 logger は学習者の操作に kid を付けないため、ログの task_id が空になる。開いているキット・マップの ID を補う（原版の値があればそれを優先）。
+function nativeTagTask(raw){try{const app=window.nativeApp||{},kit=app.kitMap&&app.kitMap.map,cm=app.conceptMap&&app.conceptMap.map,lm=app.learnerMap&&app.learnerMap.map;if(!raw.kid&&kit&&kit.kid)raw.kid=kit.kid;if(!raw.cmid&&(kit&&kit.cmid||cm&&cm.cmid))raw.cmid=kit&&kit.cmid||cm.cmid;if(!raw.lmid&&lm&&lm.lmid)raw.lmid=lm.lmid;}catch(_){}}
 function nativeCatch(promise){return Promise.resolve(promise).catch(e=>nativeStatus(e.message));}
 async function nativeStart(){
   if(!client.user.teacher)document.querySelectorAll('header nav a').forEach(a=>{if(!['index.html','mixed.html','extended.html'].includes(a.getAttribute('href')))a.hidden=true;});

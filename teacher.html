@@ -1,0 +1,1954 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kit-Build teacher</title><meta id="core-client-config" data-core="eyJiYXNldXJsIjoiLi8iLCJzZXNzaWQiOiIiLCJzZXEiOjB9"><meta id="core-lang"><link rel="stylesheet" href="upstream/.asset/vendor/bootstrap/css/bootstrap.min.css"><link rel="stylesheet" href="upstream/.asset/vendor/bootstrap-icons/bootstrap-icons.css"><link rel="stylesheet" href="upstream/.asset/vendor/animate.min.css"><link rel="stylesheet" href="upstream/.asset/vendor/huebee/huebee.min.css"><link rel="stylesheet" href="upstream/.asset/vendor/general-ui/g.ui.css"><link rel="stylesheet" href="upstream/.asset/vendor/kitbuild/kbui.css"><link rel="stylesheet" href="upstream/cmap/asset/cmap.css"><link rel="stylesheet" href="upstream/kitbuild/asset/recompose.css"><link rel="stylesheet" href="upstream/.asset/vendor/simplemde/simplemde.min.css"><link rel="stylesheet" href="upstream/.asset/vendor/highlight/default.min.css"><link rel="stylesheet" href="upstream/admin/module/analyzer/analyzer.css"><style>html,body{height:100%;margin:0}body{font-family:system-ui,sans-serif;color:#20252b;background:#f5f7f9}header{background:#fff;border-bottom:1px solid #cad0d5;padding:6px 10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}nav{display:flex;gap:12px;flex-wrap:wrap}header a{font-size:.85rem}#status{font-size:.8rem;margin-left:auto}#auth{padding:24px;max-width:600px;margin:auto}#workspace[hidden],#auth[hidden]{display:none!important}#native-shell{height:calc(100dvh - 100px);min-height:400px;display:flex;flex-direction:column}#native-shell>.vh-100{height:100%!important;min-height:0}#native-shell .flex-fill{min-height:0;min-width:0}.kb-cy{min-height:200px;touch-action:none}.kb-toolbar{flex-wrap:wrap!important}.app-navbar{flex-wrap:wrap;gap:3px;border-left-color:#b52121!important}.kb-container{min-width:0}.app-navbar .flex-fill{display:none}#native-ready{display:none}.analyzer-sidebar{overflow:auto;max-width:40vw}.modal,.kb-dialog{max-width:100vw}.kb-dialog{max-height:90dvh;overflow:auto}footer{font-size:.7rem;padding:2px 8px}#task-list a{display:inline-block;padding:5px}button:focus-visible,a:focus-visible{outline:3px solid #193da0!important}#admin-sidebar-panel{display:none}.text-secondary,.text-muted{color:#505963!important}.toast-content{color:#182026!important;filter:none!important}a{color:#0645ad}@media(max-width:600px){header{gap:5px}nav{gap:7px}.app-navbar{padding-left:4px!important;border-left-width:0!important}#native-shell{height:calc(100dvh - 160px)}.kb-toolbar .btn{padding:4px}.analyzer-sidebar{flex-basis:160px!important}footer{font-size:.65rem}}
+/* 原版 admin/asset/css/admin.css のスクロール用クラス。長い一覧が下部ツールを覆わない。 */
+.scroll-y{overflow-y:auto;overflow-x:hidden}.scroll-x{overflow-x:auto;overflow-y:hidden}.scroll{overflow:scroll}
+
+/* 元ビューの絶対配置Homeが背景の外に置かれてもコントラストを維持する。 */
+#native-shell a.position-absolute{background:#a62020;min-height:47px}
+.toast-container{max-width:calc(100vw - 16px)!important;right:8px}
+.text-primary{color:#08428c!important}
+dialog{max-width:95vw;max-height:85dvh;overflow:auto}
+</style><link rel="stylesheet" href="assets/font-awesome/css/font-awesome.min.css"></head><body><header><strong>Kit-Build</strong><span id="account"></span><button id="logout" hidden>ログアウト</button><nav aria-label="画面"><a href="teacher.html">マップ作成</a> <a href="makekit.html">キット作成</a> <a href="tmap.html">マップ管理</a> <a href="kits.html">キット管理</a> <a href="lmaps.html">提出</a> <a href="topics.html">トピック</a> <a href="grouping.html">組分け</a> <a href="analyzer.html">静的分析</a> <a href="dynamic.html">動的分析</a> <a href="index.html">学習者</a> <a href="mixed.html">Mixed</a> <a href="extended.html">Extended</a><a href="kitsets.html">段階キット</a></nav><span id="status" role="status"></span></header><main><section id="auth"><h1>Google ログイン</h1><p id="auth-message">各自のGoogleアカウントでログインしてください。</p><div id="google-button"></div></section><section id="workspace" hidden aria-label="概念マップ作業"><div id="task-list"></div><div id="admin-sidebar-panel"></div><div id="native-shell"><div class="d-flex flex-column vh-100">
+  <a class="position-absolute d-flex align-items-center text-white px-3 text-decoration-none" href="index.html">
+    <i class="bi bi-house pe-2" style="font-size: 1.8rem;"></i> <span>Home</span>
+  </a>
+  <div class="app-navbar d-flex p-2 ps-4" style="border-left: 125px solid #ff4444;">
+    <span class="app-buttons">
+      <div class="btn-group btn-group-sm">
+        <button class="bt-new btn btn-primary"><i class="bi bi-asterisk"></i> 新しい</button>
+        <button class="bt-open btn btn-sm btn-primary"><i class="bi bi-folder2-open"></i> 開いた</button>
+      </div>
+      <div class="btn-group btn-group-sm ms-2">
+        <button class="bt-save btn btn-primary"><i class="bi bi-save"></i> セーブ</button>
+        <button class="bt-save-as btn btn-primary"><i class="bi bi-front"></i> 新規保管</button>
+      </div>
+      <button class="bt-export btn btn-primary d-none"><i class="bi bi-send"></i> Export</button>
+      <div class="btn-group btn-group-sm ms-2">
+        <button class="bt-content btn btn-secondary"><i class="bi bi-file-earmark-text"></i> Content</button>
+      </div>
+    </span>
+    <div class="flex-fill">&nbsp;</div>
+    <span>
+      <div class="btn-group btn-group-sm">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle bt-profile " type="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-people-fill"></i>
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item cgpass fs-6 text-sm" href="#"><i class="bi bi-lock-fill"></i> Change Password</a></li>
+        </ul>
+        <button class="btn btn-danger btn-sm bt-logout "><i class="bi bi-power"></i> Logout</button>
+      </div>
+      <button class="btn btn-primary btn-sm bt-sign-in d-none"><i class="bi bi-power"></i> Sign In</button>
+    </span>
+  </div>
+  <div class="d-flex flex-fill align-items-stretch p-2">
+    <!-- container of this layout template must have a display: flex style -->
+<!-- or add d-flex Bootstrap class to this layout's container/parent   -->
+<div class="kb-container d-flex flex-fill flex-column border bg-white rounded">
+  <div class="kb-toolbar p-1 d-flex align-items-center justify-content-between bg-light border-bottom">
+    <span class="left-stack"></span>
+    <span class="center-stack"><span class="btn btn-sm">&nbsp;</span></span>
+    <span class="right-stack"></span>
+  </div>
+  <div id="goalmap-canvas" class="kb-cy flex-fill"></div>
+</div>  </div>
+  <div class="d-flex">
+    <div class="status-panel flex-fill m-2 mt-0 d-flex"></div>
+    <div class="status-control text-end m-2 mt-0"><button class="btn btn-primary btn-sm opacity-0">&nbsp;</button></div>
+  </div>
+</div>
+
+
+
+
+<form id="concept-map-save-as-dialog" class="card d-none">
+  <h6 class="card-header"><i class="bi bi-file-earmark-plus dialog-icon"></i> <span class="dialog-title">Save Concept Map As...</span></h6>
+  <div class="card-body">
+      <div class="row mb-1 align-items-center">
+        <label for="input-title" class="col-sm-3 col-form-label">Title</label>
+        <div class="col-sm-9">
+          <input type="text" name="title" class="form-control form-control-sm input-title" id="input-title">
+        </div>
+      </div>
+      <div class="row mb-1 align-items-center">
+        <label for="input-fid" class="col-sm-3 col-form-label">Custom ID (Optional)</label>
+        <div class="col-sm-9">
+          <div class="input-group">
+            <input type="text" class="form-control input-fid form-control-sm" name="fid" id="input-fid" style="text-transform: uppercase;" disabled>
+            <button class="bt-generate-fid btn btn-warning btn-sm" disabled><i class="bi bi-magic"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="row my-2"><small class="col-sm-12 text-center text-secondary fst-italic"><strong class="fs-bold text-primary">optionally</strong> associate with a topic:</small></div>
+      <div class="row mb-1 align-items-center">
+        <!-- <label for="select-topic" class="col-sm-3 col-form-label">Topic (Optional)</label> -->
+        <div class="col-sm-12">
+          <div class="input-group input-group-sm">
+            <select class="form-select form-control-sm" id="select-topic" name="topic" aria-label="Default select example" disabled>
+              <option value="" selected>No topic associated</option>
+              <!-- <option value="1">One</option>
+              <option value="2">Two</option>
+              <option value="3">Three</option> -->
+            </select>
+            <button class="btn btn-secondary bt-new-topic-form bt-sm" disabled><i class="bi bi-plus-lg"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="row my-2"><small class="col-sm-12 text-center text-secondary fst-italic"><strong class="fs-bold text-primary">optionally</strong> associate with existing text:</small></div>
+      <div class="row mb-1 align-items-center">
+        <div class="col-sm-12">
+          <select class="form-select form-select-sm" id="select-text" name="text" aria-label="Default select example" disabled>
+            <option value="" selected>No text associated</option>
+            <!-- <option value="1">One</option>
+            <option value="2">Two</option>
+            <option value="3">Three</option> -->
+          </select>
+        </div>
+      </div>
+      
+      <!-- <div class="row mb-1 align-items-center form-new-topic" style="display: none;">
+        <div class="col-sm-12">
+          <div class="card">
+            <div class="card-body">
+              <input type="text" class="form-control mb-1" placeholder="New Topic Name" aria-label="New Topic Name" aria-describedby="button-create-new-topic">
+              <select class="form-select mb-1" id="select-grup" aria-label="Default select example">
+                  <option selected>No group assigned</option>
+                  <option value="1">One</option>
+                  <option value="2">Two</option>
+                  <option value="3">Three</option>
+              </select>
+              <button class="bt-quick-create-topic btn btn-secondary" type="button" id="button-create-new-topic"><i class="bi bi-plus-lg"></i> Create Topic</button>
+            </div>
+          </div>
+        </div>
+      </div> -->
+  </div>
+  <div class="card-footer">
+    <div class="row">
+      <div class="col text-end">
+        <button class="bt-cancel btn btn-sm btn-secondary" style="min-width: 6rem;">キャンセル</button>
+        <button class="bt-save btn btn-sm btn-primary ms-1" style="min-width: 6rem;">セーブ</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+
+
+<form id="concept-map-open-dialog" class="card d-none">
+  <h6 class="card-header"><i class="bi bi-folder2-open"></i> Open Concept Map</h6>
+  <div class="card-body">
+    <ul class="nav nav-pills" id="open-concept-map-tab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link px-2 py-1 active" id="home-tab" data-bs-toggle="tab" data-bs-target="#database" type="button" role="tab" aria-controls="home" aria-selected="true"><small>Database</small></button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link px-2 py-1 text-muted" id="profile-tab" data-bs-toggle="tab" data-bs-target="#decode" type="button" role="tab" aria-controls="profile" aria-selected="false" disabled><small>Decode</small></button>
+      </li>
+    </ul>
+    <hr class="my-2">
+    <div class="tab-content" id="myTabContent">
+      <div class="tab-pane fade show active" id="database" role="tabpanel" aria-labelledby="database-tab">
+        <div class="row gx-2 mb-1">
+          <div class="col d-flex">
+            <span class="border-bottom px-2 py-1 flex-fill position-relative">Topic</span></div>
+          <div class="col d-flex">
+            <span class="border-bottom px-2 py-1 flex-fill position-relative">Concept Map</span></div>
+        </div>
+        <div class="row gx-2 mb-3">
+          <div class="col list list-topic">
+            <span class="topic list-item default" data-tid="">
+              <em class="text-muted">Unassigned</em><bi class="bi bi-check-lg text-primary"></bi>
+            </span>
+          </div>
+          <div class="col list list-concept-map"></div>
+        </div>
+        <div class="badge rounded-pill bg-secondary bt-refresh-topic-list" role="button">Refresh Topic List</div>
+      </div>
+      <div class="tab-pane fade" id="decode" role="tabpanel" aria-labelledby="decode-tab">
+        <div class="mb-3">
+          <label for="decode-textarea" class="form-label">Concept Map Data</label>
+          <textarea class="form-control" id="decode-textarea" rows="4"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card-footer">
+    <div class="row">
+      <div class="col text-start">
+        <span class="bt-open-topic btn btn-sm btn-success ms-1" role="button" style="min-width: 6rem;">Open Topic</span>
+      </div>
+      <div class="col text-end">
+        <button class="bt-cancel btn btn-sm btn-secondary" style="min-width: 6rem;">キャンセル</button>
+        <button class="bt-open btn btn-sm btn-primary ms-1" style="min-width: 6rem;">開いた</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div id="content-dialog" class="card d-none">
+    <h6 class="card-header d-flex">
+      <span class="drag-handle flex-fill"><i class="dialog-icon bi bi-file-text"></i> <span class="dialog-title">Content</span></span>
+      <i class="bi bi-x-lg bt-close bt-x" role="button"></i>
+    </h6>
+    <div class="card-body position-relative overflow-hidden overflow-scroll d-flex flex-fill mb-3">
+      <div class="content text-secondary"></div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <span>
+        <span class="bt-scroll-top btn btn-sm ms-1 btn-primary px-3"><i class="bi bi-chevron-bar-up"></i> Back to Top</span>
+        <span class="bt-scroll-more btn btn-sm ms-1 btn-primary px-3"><i class="bi bi-chevron-down"></i> More</span>
+      </span>
+      <span>
+        <button class="btn btn-sm btn-secondary bt-close px-3">閉じる</button>
+        <button class="btn btn-sm resize-handle pe-0 ps-3"><i class="bi bi-textarea-resize"></i></button>
+      </span>
+    </div>
+  </div>
+
+<div id="concept-map-export-dialog" class="card d-none">
+  <h6 class="card-header"><i class="bi bi-send"></i> Export</h6>
+  <div class="card-body">
+    <textarea class="form-control encoded-data" rows="5"></textarea>
+  </div>
+  <div class="card-footer text-end">
+    <button class="btn btn-sm btn-secondary bt-cancel px-3">キャンセル</button>
+    <button class="btn btn-sm btn-primary ms-1 bt-clipboard px-3"><i class="bi bi-clipboard"></i> Copy to Clipboard</button>
+  </div>
+</div>
+
+<!-- <div id="concept-map-copy-paste-dialog" class="card d-none">
+  <h6 class="card-header"><i class="dialog-icon bi"></i> <span class="dialog-title">コピー</span></h6>
+  <div class="card-body">
+    <textarea class="form-control encoded-data" rows="5"></textarea>
+  </div>
+  <div class="card-footer text-end">
+    <button class="btn btn-sm btn-secondary bt-cancel px-3">キャンセル</button>
+    <button class="btn btn-sm btn-secondary bt-paste px-3 ms-1"><i class="bi bi-clipboard"></i> Paste Clipboard</button>
+    <button class="btn btn-sm btn-primary ms-1 bt-copy-paste px-3"><i class="dialog-icon bi"></i> <span class="dialog-action">コピー</span></button>
+  </div>
+</div> -->
+
+<div id="cgpass-dialog" class="card shadow mx-auto d-none">
+  <div class="card-body">
+    <h5 class="card-title">Change Password</h5>
+    <h6 class="card-subtitle mb-2 text-username"><span class="text-secondary">User</span> &rsaquo; <span class="text-danger user-username"></span> &rsaquo; <span class="text-primary user-name"></span></h6>
+    <hr>
+    <form id="form-cgpass" class="text-left" class="needs-validation" novalidate>
+      <input type="hidden" name="username" value="" />
+      <div class="row">
+        <div class="col">
+          <div class="form-group">
+            <label for="password0">Current (old) Password</label>
+            <input type="password" class="form-control" id="password0" required>
+            <div class="password0 invalid-feedback">
+              You must provide your current password.
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="form-group">
+            <label for="password1">New Password</label>
+            <input type="password" class="form-control" id="password1" required>
+            <div class="password1 invalid-feedback">
+              New password cannot empty.
+            </div>
+          </div>
+          <div class="form-group mt-1">
+            <label for="password2">New Password (Repeat)</label>
+            <input type="password" class="form-control" id="password2" required>
+            <div class="password2 invalid-feedback">
+              New password must be equal.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-end"><small class="text-danger">New password should have minimum 8 characters alphanumeric.</small></div>
+      <hr>
+      <div class="text-end">
+        <button class="btn btn-secondary bt-close">Cancel</button>
+        <button type="submit" class="btn btn-primary ms-2 bt-cgpass">Change Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- Dialog Modal -->
+<div class="modal" id="modal-dialog" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content shadow">
+      <div class="modal-body">
+        <div class="dialog-head">
+          <div class="dialog-title fw-bold"></div>
+          <hr>
+        </div>
+        <div class="dialog-body d-flex align-items-center">
+          <i class="dialog-icon fs-1 me-3 ms-2"></i>
+          <div class="dialog-content" style="font-size:.9rem"></div>
+        </div>
+        <hr>
+        <div class="dialog-foot">
+          <button type="button" class="btn btn-sm btn-secondary bt-negative px-2 mx-2 mb-2">いいえ</button>
+          <button type="button" class="btn btn-sm btn-primary bt-positive px-2 mb-2">はい</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /Dialog Modal -->
+<!-- Loading Modal -->
+<div class="modal" id="modal-loading" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="modal-loading text-center text-primary">
+          <div class="animation"></div>
+          <div class="mt-2"><span class="loading-text text-dark"></span></div>
+        </div>
+        <div id="modal-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /Loading Modal -->
+<!-- SignIn Modal -->
+<div class="card d-none shadow" id="modal-sign-in" tabindex="-1" aria-hidden="true">
+  <div class="card-body mx-3 text-center">
+    <form name="form-sign-in" autocomplete="off">
+      <h1 class="h3 mb-4 mt-4 fw-normal">Sign in</h1>
+      <div class="form-floating">
+        <input type="text" class="form-control rounded-0 rounded-top" id="input-username" placeholder="Username" autocomplete="new-password" style="margin-bottom: -1px;">
+        <label for="input-username">Username</label>
+      </div>
+      <div class="form-floating">
+        <input type="password" class="form-control rounded-0 rounded-bottom" id="input-password" placeholder="Password" autocomplete="new-password">
+        <label for="input-password">Password</label>
+      </div>
+
+      <div class="checkbox mb-3 mt-2 mx-2">
+        <label> <input type="checkbox" id="input-remember-me" value="remember-me"> Remember me </label>
+      </div>
+      <button class="w-100 btn btn-lg btn-primary bt-sign-in" type="submit">Sign in</button>
+      <div id="sign-in-filter" class="text-center mt-3"></div>
+      <p class="mt-5 mb-3 text-muted">&copy; 2017–2026</p>
+    </form> 
+  </div>
+</div>
+<!-- /SignIn Modal --></div><span id="native-ready"></span></section></main><footer>Kit-Build System v2 — aryoxp / <a href="LICENSES.md">原版・ライブラリの権利表記</a></footer><script src="upstream/core/asset/vendor/jquery-3.6.0.min.js"></script><script src="upstream/.asset/vendor/bootstrap/js/bootstrap.bundle.min.js"></script><script src="upstream/core/asset/vendor/pako/pako.min.js"></script><script src="upstream/core/asset/js/core-clients.js"></script><script src="upstream/core/asset/js/core-language.js"></script><script src="upstream/core/asset/js/core-runtime.js"></script><script src="upstream/.asset/vendor/cytoscapejs/cytoscape.min.js"></script><script src="upstream/.asset/vendor/cytoscapejs/layout-base.js"></script><script src="upstream/.asset/vendor/cytoscapejs/cose-base.js"></script><script src="upstream/.asset/vendor/cytoscapejs/cytoscape-fcose.js"></script><script src="upstream/.asset/vendor/huebee/huebee.pkgd.min.js"></script><script src="upstream/.asset/vendor/anime.min.js"></script><script src="upstream/.asset/vendor/general-ui/g.ui.js"></script><script src="upstream/.asset/vendor/kitbuild/kbui.js"></script><script src="upstream/.asset/vendor/kitbuild/kbui.canvas.style.js"></script><script src="upstream/.asset/vendor/kitbuild/kbui.canvas.tool.js"></script><script src="upstream/.asset/vendor/kitbuild/kbui.toolbar.js"></script><script src="upstream/.asset/vendor/kitbuild/kitbuild.js"></script><script src="upstream/.asset/vendor/kitbuild/analyzer.js"></script><script src="upstream/.asset/vendor/kitbuild/logger.js"></script><script src="upstream/.asset/vendor/showdown.min.js"></script><script src="upstream/.asset/vendor/highlight/highlight.min.js"></script><script src="upstream/.asset/vendor/sortable.min.js"></script><script src="upstream/.asset/vendor/sortable.jq.min.js"></script><script src="upstream/.asset/vendor/xlsx.mini.min.js"></script><script src="upstream/.asset/vendor/simplemde/simplemde.min.js"></script><script src="assets/purify.min.js"></script><script>const KB_CONFIG={"endpoint":"https://script.google.com/macros/s/AKfycbxnYz9Byxt2rHWq3-bl8ltZ5SxnWw9UQxYhlBXPeMQbQ-DoLd-WjjL1A4KaC-xskPSICg/exec","clientId":"805161288771-qntebds8se591ub336uuceoue1leo1p6.apps.googleusercontent.com","appVersion":"1.0.0"};const KB_PAGE={"name":"teacher","teacher":true,"ready":true};const KB_LANGUAGE={"cancel":"キャンセル","close":"閉じる","copy":"コピー","disabled":"無効","download":"ダウンロード","enabled":"有効","end":"終了","error":"エラー","finish":"終了","hello":"こんにちは","load":"ロード","loading":"読み込み中...","new":"新しい","no":"いいえ","off":"オフ","ok":"了解","on":"オン","open":"開いた","paste":"ペースト","redo":"やり直す","reset":"リセット","save":"セーブ","save-as":"新規保管","set":"セットする","start":"開始","stop":"停止","toggle":"トグル","undo":"元に戻す","unset":"未設定","upload":"アップロード","yes":"はい","zoom":"ズーム"};function mountGoogle(callback) {
+  if (!KB_CONFIG.clientId) { document.getElementById('auth-message').textContent = '管理者が OAuth クライアントIDを設定してから利用できます。'; return; }
+  var s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+  s.onload = function () { google.accounts.id.initialize({client_id:KB_CONFIG.clientId, callback:r => callback(r.credential)}); google.accounts.id.renderButton(document.getElementById('google-button'), {theme:'outline',size:'large',width:280}); };
+  s.onerror = function () { document.getElementById('auth-message').textContent = 'Googleログインを読み込めません。通信を確認して再読み込みしてください。'; };
+  document.head.appendChild(s);
+}
+</script><script id="native-app-source" type="text/plain">$(() => {
+  // jQuery onReady callback
+  let app = CmapApp.instance();
+});
+
+class L {
+  static log() {}
+}
+
+class CmapApp {
+  constructor() {
+    this.kbui = KitBuildUI.instance(CmapApp.canvasId);
+    let canvas = this.kbui.canvases.get(CmapApp.canvasId);
+    canvas.addToolbarTool(KitBuildToolbar.UNDO_REDO, { priority: 3 });
+    canvas.addToolbarTool(KitBuildToolbar.NODE_CREATE, { priority: 2 });
+    canvas.addToolbarTool(KitBuildToolbar.UTILITY, { priority: 5 });
+    canvas.addToolbarTool(KitBuildToolbar.CAMERA, { priority: 4 });
+    // canvas.addToolbarTool(KitBuildToolbar.SHARE, { priority: 6 })
+    canvas.addToolbarTool(KitBuildToolbar.LAYOUT, { priority: 7 });
+    canvas.toolbar.render();
+
+    canvas.addCanvasTool(KitBuildCanvasTool.DELETE);
+    canvas.addCanvasTool(KitBuildCanvasTool.DUPLICATE);
+    canvas.addCanvasTool(KitBuildCanvasTool.EDIT);
+    canvas.addCanvasTool(KitBuildCanvasTool.SWITCH);
+    canvas.addCanvasTool(KitBuildCanvasTool.DISCONNECT);
+    canvas.addCanvasTool(KitBuildCanvasTool.CENTROID);
+    canvas.addCanvasTool(KitBuildCanvasTool.CREATE_CONCEPT);
+    canvas.addCanvasTool(KitBuildCanvasTool.CREATE_LINK);
+    canvas.addCanvasTool(KitBuildCanvasTool.LOCK); // also UNLOCK toggle
+
+    canvas.addCanvasMultiTool(KitBuildCanvasTool.DELETE);
+    canvas.addCanvasMultiTool(KitBuildCanvasTool.DUPLICATE);
+    canvas.addCanvasMultiTool(KitBuildCanvasTool.LOCK);
+    canvas.addCanvasMultiTool(KitBuildCanvasTool.UNLOCK);
+
+    this.canvas = canvas;
+
+    this.session = Core.instance().session();
+    this.ajax = Core.instance().ajax();
+    this.runtime = Core.instance().runtime();
+    this.config = Core.instance().config();
+    
+    // Hack for sidebar-panel show/hide
+    // To auto-resize the canvas.
+    // let observer = new MutationObserver((mutations) => $(`#${canvas.canvasId} > div`).css('width', 0))
+    // observer.observe(document.querySelector('#admin-sidebar-panel'), {attributes: true})
+    // Enable tooltip;
+    $('[data-bs-toggle="tooltip"]').tooltip();
+
+    // Browser lifecycle event
+    KitBuildUI.addLifeCycleListener(CmapApp.onBrowserStateChange);
+
+    // console.log(typeof Logger)
+    if (typeof CmapLogger != "undefined") {
+      let sessid = Core.instance().config().get("sessid");
+      this.logger = CmapLogger.instance(null, 0, sessid, canvas).enable();
+      CmapApp.loggerListener = this.logger.onCanvasEvent.bind(this.logger);
+      L.log = this.logger.log.bind(this.logger);
+      L.log(`init-${this.constructor.name}`);
+      canvas.on("event", CmapApp.loggerListener);
+    }
+
+    this.handleEvent();
+    this.handleRefresh();
+  }
+
+  static instance() {
+    CmapApp.inst = new CmapApp();
+    return CmapApp.inst;
+  }
+
+  setConceptMap(conceptMap = null) {
+    console.warn("CONCEPT MAP SET:", conceptMap);
+    this.conceptMap = conceptMap;
+    if (conceptMap) {
+      this.canvas.direction = conceptMap.map.direction;
+      this.session.set("cmid", conceptMap.map.cmid);
+      let status =
+        `<span class="mx-2 d-flex align-items-center status-cmap">` +
+        `<span class="badge rounded-pill bg-secondary">ID: ${conceptMap.map.cmid}</span>` +
+        `<span class="text-secondary ms-2 text-truncate"><small>${conceptMap.map.title}</small></span>` +
+        `</span>`;
+      StatusBar.instance().remove(".status-cmap").append(status);
+    } else {
+      StatusBar.instance().remove(".status-cmap");
+      this.session.unset("cmid");
+    }
+  }
+
+  handleEvent() {
+    let saveAsDialog = UI.modal("#concept-map-save-as-dialog", {
+      onShow: () => {
+        $("#concept-map-save-as-dialog .input-title").focus();
+        // console.log(this)
+        KitBuild.getTopicListOfGroups(this.user.gids.split(",")).then(
+          (topics) => {
+            let list = '<option value="">No topic associated</option>';
+            topics.forEach((topic) => {
+              let selected =
+                this.conceptMap && this.conceptMap.map.topic == topic.tid ? " selected" : "";
+              if (
+                selected == "" &&
+                CmapApp.topic &&
+                CmapApp.topic.tid == topic.tid
+              )
+                selected = " selected";
+              list += `<option value="${topic.tid}"${selected}>${topic.title}</option>`;
+            });
+            $("#select-topic").html(list);
+          }
+        );
+      },
+      hideElement: ".bt-cancel",
+    });
+    saveAsDialog.setConceptMap = (conceptMap) => {
+      if (conceptMap) {
+        saveAsDialog.cmid = conceptMap.map.cmid;
+        $("#input-fid").val(conceptMap.map.cmfid);
+        $("#input-title").val(conceptMap.map.title);
+        $("#select-topic").val(conceptMap.map.topic);
+        $("#select-text").val(conceptMap.map.text);
+        saveAsDialog.create_time = conceptMap.map.create_time;
+      } else {
+        saveAsDialog.cmid = null;
+        $("#input-fid").val("");
+        $("#input-title").val("");
+        $("#select-topic").val(null);
+        $("#select-text").val(null);
+      }
+      return saveAsDialog;
+    };
+    saveAsDialog.setTitle = (title) => {
+      $("#concept-map-save-as-dialog .dialog-title").html(title);
+      return saveAsDialog;
+    };
+    saveAsDialog.setIcon = (icon) => {
+      $("#concept-map-save-as-dialog .dialog-icon")
+        .removeClass()
+        .addClass(`dialog-icon bi bi-${icon} me-2`);
+      return saveAsDialog;
+    };
+
+    let openDialog = UI.modal("#concept-map-open-dialog", {
+      hideElement: ".bt-cancel",
+      width: "650px",
+    });
+
+    let contentDialog = UI.modal("#content-dialog", {
+      hideElement: ".bt-close",
+      backdrop: false,
+      get height() {
+        return ($("body").height() * 0.7) | 0;
+      },
+      get offset() {
+        return { left: ($("body").width() * 0.1) | 0 };
+      },
+      draggable: true,
+      dragHandle: ".drag-handle",
+      resizable: true,
+      resizeHandle: ".resize-handle",
+      minWidth: 375,
+      minHeight: 200,
+      onShow: () => {
+        let sdown = new showdown.Converter({
+          strikethrough: true,
+          tables: true,
+          simplifiedAutoLink: true,
+        });
+        sdown.setFlavor("github");
+        let htmlText = contentDialog.text ? sdown.makeHtml(contentDialog.text.content) : "<em>Content text unavailable.</em>";
+        $("#content-dialog .content").html(htmlText);
+        hljs.highlightAll();
+      },
+    });
+    contentDialog.setContent = (text, type = "md") => {
+      contentDialog.text = text;
+      return contentDialog;
+    };
+    contentDialog.on("event", (event, data) => {
+      L.log(`content-${event}`, data);
+    });
+
+    let exportDialog = UI.modal("#concept-map-export-dialog", {
+      hideElement: ".bt-cancel",
+    });
+
+    let cgpassDialog = UI.modal('#cgpass-dialog', {
+      hideElement: '.bt-close',
+    });
+
+    /**
+     *
+     * New Map
+     */
+
+    $(".app-navbar .bt-new").on("click", () => {
+      let proceed = () => {
+        this.canvas.reset();
+        CmapApp.inst.setConceptMap(null);
+        UI.info("Canvas has been reset").show();
+        L.log(
+          "reset-concept-map",
+          this.conceptMap ? this.conceptMap.map.cmid : null
+        );
+      };
+      if (this.canvas.cy.elements().length > 0 || CmapApp.inst.conceptMap) {
+        let confirm = UI.confirm(
+          "Discard this map and create a new concept map from scratch?"
+        )
+          .positive(() => {
+            proceed();
+            confirm.hide();
+            return;
+          })
+          .show();
+        return;
+      }
+      proceed();
+    });
+
+    $(".app-navbar .bt-save").on("click", () => {
+      // console.log(CmapApp.inst)
+      if (!CmapApp.inst.conceptMap)
+        $(".app-navbar .bt-save-as").trigger("click");
+      else
+        saveAsDialog
+          .setConceptMap(CmapApp.inst.conceptMap)
+          .setTitle("Save Concept Map (Update)")
+          .setIcon("file-earmark-check")
+          .show();
+    });
+
+    $(".app-navbar .bt-save-as").on("click", () => {
+      if (this.canvas.cy.elements().length == 0) {
+        UI.warning("Nothing to save. Canvas is empty.").show();
+        return;
+      }
+      saveAsDialog
+        .setConceptMap()
+        .setTitle("Save Concept Map As...")
+        .setIcon("file-earmark-plus")
+        .show();
+    });
+
+    $("#concept-map-save-as-dialog .input-title").on("focusout", (e) => {
+      if (
+        $("#input-fid").val().match(/^ *$/) &&
+        !saveAsDialog.cmid &&
+        $(e.currentTarget).val().trim() != ""
+      ) {
+        $("#concept-map-save-as-dialog .bt-generate-fid").trigger("click");
+        let fid = $("#input-fid").val();
+        $("#input-fid").val(fid + parseInt(Math.random() * 100));
+      } else $("#input-fid").val("");
+    });
+
+    $("#concept-map-save-as-dialog").on("click", ".bt-generate-fid", (e) => {
+      // console.log(e)
+      $("#input-fid").val(
+        $("#input-title")
+          .val()
+          .replace(/\s/g, "")
+          .substring(0, 15)
+          .trim()
+          .toUpperCase()
+      ); 
+      e.preventDefault();
+    });
+
+    $("#concept-map-save-as-dialog").on("click", ".bt-new-topic-form", (e) => {
+      // console.log(e)
+      $("#concept-map-save-as-dialog .form-new-topic").slideDown("fast");
+      e.preventDefault();
+    });
+
+    $("#concept-map-save-as-dialog").on("submit", (e) => {
+      e.preventDefault();
+      // console.log($('#select-topic').val(), $('#select-topic').val().match(/^ *$/));
+      let data = Object.assign(
+        {
+          cmid: saveAsDialog.cmid ? saveAsDialog.cmid : null,
+          cmfid: $("#input-fid").val().match(/^ *$/) ? null : $("#input-fid").val().trim().toUpperCase(),
+          title: $("#input-title").val(),
+          direction: this.canvas.direction,
+          topic: $("#select-topic").val().match(/^ *$/) ? null : $("#select-topic").val().trim(),
+          // text: $('#select-text').val().match(/^ *$/) ? null : $('#select-text').val().trim(),
+          type: CmapApp.defaultMapType,
+          author: this.user ? this.user.username : null,
+          create_time: null,
+        },
+        KitBuildUI.buildConceptMapData(this.canvas)
+      ); // console.log(data); return
+      this.ajax
+        .post("kitBuildApi/saveConceptMap", { data: Core.compress(data) })
+        .then((conceptMap) => {
+          CmapApp.inst.setConceptMap(conceptMap);
+          UI.success("Concept map has been saved successfully.").show();
+          L.log(data.cmid ? "save-map" : "save-as-map", conceptMap.map, null, {
+            cmid: conceptMap.map.cmid,
+            includeMapData: true,
+          });
+          saveAsDialog.hide();
+        })
+        .catch((error) => {
+          UI.error("Error saving concept map: " + error).show();
+        });
+    });
+
+    /**
+     *
+     * Open
+     */
+
+    $(".app-navbar .bt-open").on("click", () => {
+      openDialog.show();
+      let tid = openDialog.tid;
+      if (!tid)
+        $("#concept-map-open-dialog .list-topic .list-item.default").trigger(
+          "click"
+        );
+      else
+        $(
+          `#concept-map-open-dialog .list-topic .list-item[data-tid="${tid}"]`
+        ).trigger("click");
+      $(`#concept-map-open-dialog .bt-refresh-topic-list`).trigger("click");
+    });
+
+    $("#concept-map-open-dialog .list-topic").on("click", ".list-item", (e) => {
+      if (openDialog.tid != $(e.currentTarget).attr("data-tid"))
+        // different concept map?
+        openDialog.cmid = null; // reset selected concept map id.
+      openDialog.tid = $(e.currentTarget).attr("data-tid");
+      $("#concept-map-open-dialog .list-topic .bi-check-lg").addClass("d-none");
+      $("#concept-map-open-dialog .list-topic .list-item").removeClass(
+        "active"
+      );
+      $(e.currentTarget).find(".bi-check-lg").removeClass("d-none");
+      $(e.currentTarget).addClass("active");
+
+      this.ajax
+        .post(`kitBuildApi/getUserConceptMapListByTopic`, {
+          username: this.user.username,
+          tid: openDialog.tid == "" ? undefined : openDialog.tid,
+        })
+        .then((cmaps) => {
+          // console.log(cmaps)
+          let cmapsHtml = "";
+          cmaps.forEach((cm) => {
+            cmapsHtml +=
+              `<span class="concept-map list-item" data-cmid="${cm.cmid}" data-cmfid="${cm.cmfid}">` +
+              `<span class="text-truncate">${cm.title}</span>` +
+              `<bi class="bi bi-check-lg text-primary d-none"></bi></span>`;
+          });
+          $("#concept-map-open-dialog .list-concept-map").slideUp({
+            duration: 100,
+            complete: () => {
+              $("#concept-map-open-dialog .list-concept-map")
+                .html(cmapsHtml)
+                .slideDown({
+                  duration: 100,
+                  complete: () => {
+                    if (openDialog.cmid) {
+                      $(
+                        `#concept-map-open-dialog .list-concept-map .list-item[data-cmid="${openDialog.cmid}"]`
+                      )
+                        .trigger("click")[0]
+                        .scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        });
+                    } else
+                      $("#concept-map-open-dialog .list-concept-map").scrollTop(
+                        0
+                      );
+                  },
+                });
+            },
+          });
+        });
+    });
+
+    $("#concept-map-open-dialog .list-concept-map").on(
+      "click",
+      ".list-item",
+      (e) => {
+        openDialog.cmid = $(e.currentTarget).attr("data-cmid");
+        $("#concept-map-open-dialog .list-concept-map .bi-check-lg").addClass(
+          "d-none"
+        );
+        $("#concept-map-open-dialog .list-concept-map .list-item").removeClass(
+          "active"
+        );
+        $(e.currentTarget).find(".bi-check-lg").removeClass("d-none");
+        $(e.currentTarget).addClass("active");
+      }
+    );
+
+    $("#concept-map-open-dialog .bt-refresh-topic-list").on("click", () => {
+      this.ajax.get("kitBuildApi/getTopicList").then((topics) => {
+        // console.log(topics)
+        let topicsHtml = "";
+        topics.forEach((t) => {
+          // console.log(t);
+          topicsHtml +=
+            `<span class="topic list-item align-items-center" data-tid="${t.tid}">` +
+            `<span class="d-flex align-items-center">${t.title}` +
+            (t.text ? `<span class="badge rounded-pill bg-success ms-2">Text</span>` : "") +
+            `</span>` +
+            `<bi class="bi bi-check-lg text-primary d-none"></bi></span>`;
+        });
+        $("#concept-map-open-dialog .list-topic").slideUp({
+          duration: 100,
+          complete: () => {
+            $("#concept-map-open-dialog .list-topic .list-item")
+              .not(".default")
+              .remove();
+            $("#concept-map-open-dialog .list-topic")
+              .append(topicsHtml)
+              .slideDown(100);
+            $(
+              `#concept-map-open-dialog .list-topic .list-item[data-tid="${openDialog.tid}"]`
+            ).trigger("click");
+          },
+        });
+      });
+    });
+
+    $("#concept-map-open-dialog").on("click", ".bt-open-topic", (e) => {
+      e.preventDefault();
+      if (!openDialog.tid) {
+        UI.dialog("Please select a topic.").show();
+        return;
+      }
+      this.ajax.get(`contentApi/getTopic/${openDialog.tid}`).then((topic) => {
+        this.setTopic(topic);
+        this.session.set("tid", openDialog.tid);
+        L.log("open-topic", { tid: topic.tid, title: topic.title });
+        openDialog.hide();
+      });
+    });
+
+    $("#concept-map-open-dialog").on("click", ".bt-open", (e) => {
+      e.preventDefault();
+
+      let target = $("#open-concept-map-tab")
+        .find(".nav-link.active")
+        .attr("data-bs-target");
+      let openPromise = [];
+      if (target == "#database") {
+        if (!openDialog.cmid) {
+          UI.dialog("Please select a concept map.").show();
+          return;
+        }
+        openPromise.push(
+          new Promise((resolve, reject) => {
+            KitBuild.openConceptMap(openDialog.cmid)
+              .then((conceptMap) => {
+                resolve(
+                  Object.assign(conceptMap, {
+                    cyData: KitBuildUI.composeConceptMap(conceptMap),
+                  })
+                );
+              })
+              .catch((error) => {
+                reject(error);
+              });
+          })
+        );
+      } else {
+        // #decode
+        openPromise.push(
+          new Promise((resolve, reject) => {
+            try {
+              let data = $("#decode-textarea").val().trim();
+              let conceptMap = Core.decompress(data);
+              resolve(
+                Object.assign(conceptMap, {
+                  cyData: KitBuildUI.composeConceptMap(conceptMap),
+                })
+              );
+            } catch (error) {
+              reject(error);
+            }
+          })
+        );
+      }
+      if (openPromise.length)
+        Promise.any(openPromise)
+          .then((conceptMap) => {
+            // console.log(conceptMap)
+            let proceed = () => {
+              CmapApp.inst.setConceptMap(conceptMap);
+              this.canvas.cy.elements().remove();
+              this.canvas.cy.add(conceptMap.cyData);
+              this.canvas.applyElementStyle();
+              this.canvas.toolbar.tools
+                .get(KitBuildToolbar.CAMERA)
+                .fit(null, { duration: 0 });
+              this.canvas.toolbar.tools
+                .get(KitBuildToolbar.NODE_CREATE)
+                .setActiveDirection(conceptMap.map.direction);
+              this.canvas.canvasTool.clearCanvas().clearIndicatorCanvas();
+              UI.success("Concept map loaded.").show();
+              L.log("open-concept-map", conceptMap.map, null, {
+                cmid: conceptMap.map.cmid,
+                includeMapData: true,
+              });
+              openDialog.hide();
+              CmapApp.collab(
+                "command",
+                "set-concept-map",
+                conceptMap,
+                conceptMap.cyData
+              );
+            };
+            if (this.canvas.cy.elements().length) {
+              let confirm = UI.confirm(
+                "Do you want to open and replace current concept map on canvas?"
+              )
+                .positive(() => {
+                  confirm.hide();
+                  proceed();
+                })
+                .show();
+            } else proceed();
+          })
+          .catch((error) => {
+            console.error(error.errors);
+            L.log("open-concept-map-error", { cmid: openDialog.cmid });
+            UI.dialog("The concept map data is invalid.", {
+              icon: "exclamation-triangle",
+              iconStyle: "danger",
+            }).show();
+          });
+    });
+
+    /**
+     *
+     * Export
+     */
+
+    $(".app-navbar .bt-export").on("click", (e) => {
+      // console.log(e)
+      let canvasData = KitBuildUI.buildConceptMapData(this.canvas);
+      canvasData.direction = this.canvas.direction;
+      if (CmapApp.inst.conceptMap && CmapApp.inst.conceptMap.map)
+        canvasData.map = CmapApp.inst.conceptMap.map;
+      else
+        canvasData.map = {
+          cmid: null,
+          cmfid: null,
+          title: "Untitled",
+          direction: this.canvas.direction,
+          topic: null,
+          text: null,
+          author: this.user ? this.user.username : null,
+          create_time: null,
+        };
+      $("#concept-map-export-dialog .encoded-data").val(
+        Core.compress(canvasData)
+      );
+      exportDialog.show();
+    });
+
+    $("#concept-map-export-dialog").on("click", ".bt-clipboard", (e) => {
+      navigator.clipboard.writeText(
+        $("#concept-map-export-dialog .encoded-data").val().trim()
+      );
+      $(e.currentTarget).html(
+        '<i class="bi bi-clipboard"></i> Data has been copied to Clipboard!'
+      );
+      setTimeout(() => {
+        $(e.currentTarget).html(
+          '<i class="bi bi-clipboard"></i> Copy to Clipboard'
+        );
+      }, 3000);
+    });
+
+    /**
+     * Content
+     * */
+
+    $(".app-navbar").on("click", ".bt-content", () => {
+      // console.log(KitBuildApp.inst)
+      if (!CmapApp.topic) {
+        UI.dialog("Please open a topic to see its content.").show();
+        return;
+      }
+      if (!CmapApp.topic.text) {
+        UI.dialog("This topic does not have any content.").show();
+        return;
+      }
+      if (!contentDialog.text || contentDialog.text.tid != CmapApp.topic.text)
+        this.ajax
+          .get(`kitBuildApi/getTextOfTopic/${CmapApp.topic.text}`)
+          .then((text) => {
+            this.setText(text);
+            this.session.set("txid", text.tid);
+            contentDialog.setContent(text).show();
+            L.log("show-content", { tid: text.tid, title: text.title });
+          });
+      else contentDialog.show();
+    });
+
+    $("#kit-content-dialog .bt-scroll-top").on("click", (e) => {
+      $("#kit-content-dialog .content").parent().animate({ scrollTop: 0 }, 200);
+      L.log("scroll-top-content");
+    });
+
+    $("#kit-content-dialog .bt-scroll-more").on("click", (e) => {
+      let height = $("#kit-content-dialog .content").parent().height();
+      let scrollTop = $("#kit-content-dialog .content").parent().scrollTop();
+      $("#kit-content-dialog .content")
+        .parent()
+        .animate({ scrollTop: scrollTop + height - 16 }, 200);
+      L.log("scroll-more-content");
+    });
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /** 
+     * 
+     * Change password
+    */
+     $('.app-navbar .cgpass').on('click', (e) => {
+      e.preventDefault();
+      this.session.get('user').then((user) => {
+        // console.log(user);
+        $('#cgpass-dialog .user-username').html(user.username);
+        $('#cgpass-dialog .user-name').html(user.name);
+        $('#form-cgpass input[name="username"]').val(user.username);
+        cgpassDialog.show();
+      }, (error) => { 
+        console.error(error);
+        UI.errorDialog(error); 
+      });
+    });
+    $('#form-cgpass').on('submit', (e) => {
+      e.preventDefault();
+
+      let username = $('#form-cgpass input[name="username"]').val();
+      // console.log(username);
+  
+      let p0 = $('#password0').val();
+      let p1 = $('#password1').val();
+      let p2 = $('#password2').val();
+  
+      let valid = true;
+  
+      if (p0 === '') {
+        $('.password0.invalid-feedback').text('Please provide your current password.');
+        $('#password0').addClass('is-invalid');
+        valid = false;
+      } else $('#password0').removeClass('is-invalid').addClass('is-valid');
+  
+      if (p1 === '') {
+        $('.password1.invalid-feedback').text('New password cannot be empty.');
+        $('#password1').addClass('is-invalid');
+        valid = false;
+      } else $('#password1').removeClass('is-invalid').addClass('is-valid');
+  
+      if (p2 === '') {
+        $('.password2.invalid-feedback').text('New password (repeat) cannot be empty.');
+        $('#password2').addClass('is-invalid');
+        valid = false;
+      } else $('#password2').removeClass('is-invalid').addClass('is-valid');
+  
+      if (!valid) return;
+  
+      if (p1 != p2) {
+        $('.password1.invalid-feedback').text('New password and new password (repeat) must be equal');
+        $('#password1').addClass('is-invalid');
+        $('#password2').addClass('is-invalid');
+        return;
+      } else if (!(p1.match(/[a-z]+/gi) && p1.match(/[0-9]+/gi) && p1.length >= 8)) {
+        $('.password1.invalid-feedback').text('Password must contains alphanumeric characters (a-z, 0-9) with at least consisted of 8 or more characters.');
+        $('#password1').addClass('is-invalid');
+        return;
+      } else {
+        $('#password1').removeClass('is-invalid');
+        $('#password2').removeClass('is-invalid');
+      }
+  
+      $('#password1').addClass('is-valid');
+      $('#password2').addClass('is-valid');
+  
+      this.ajax.post('RBACApi/changeUserPassword',
+        {
+          username: username,
+          currentPassword: p0, // current password
+          password: p1,        // new password
+          passwordRepeat: p2   // new password repeat
+        }
+      ).then((result) => {
+        // console.log(result);
+        if (result) {
+          cgpassDialog.hide();
+          UI.successDialog('<span class="text-success">Password has been successfully changed.</span> <br> Next time you log in you will need to use the new password.').show();
+        } else UI.errorDialog('Password change error. Incorrect old password or new password is equal to old password.').show();
+      }, (error) => {
+        // console.error(error);
+        UI.errorDialog('Password change error. Incorrect old password or new password is equal to old password.').show();
+      });
+  
+  
+  
+      // let valid = e.currentTarget.checkValidity();
+      // console.log(valid);
+      // $(e.currentTarget).addClass('was-validated');
+  
+  
+  
+    });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    /**
+     *
+     * Logout
+     */
+    $(".app-navbar .bt-logout").on("click", (e) => {
+      let confirm = UI.confirm(
+        'Do you want to logout?<br>This will <strong class="text-danger">END</strong> your concept mapping session.'
+      )
+        .positive(() => {
+          L.log("logout", {
+            username: this.user.username,
+            name: this.user.name,
+          });
+          Core.instance()
+            .session()
+            .unset("user")
+            .then(() => {
+              CmapApp.inst.setConceptMap(null);
+              KitBuildCollab.enableControl(false);
+              CmapApp.enableNavbarButton(false);
+              CmapApp.updateSignInOutButton();
+              StatusBar.instance().remove(".status-user");
+              if (CmapApp.collabInst) CmapApp.collabInst.disconnect();
+              this.canvas.cy.elements().remove();
+              this.canvas.canvasTool.clearCanvas().clearIndicatorCanvas();
+              this.canvas.toolbar.tools
+                .get(KitBuildToolbar.UNDO_REDO)
+                .clearStacks()
+                .updateStacksStateButton();
+              this.logger.seq = 0;
+              UI.success("You have signed out.").show();
+              StatusBar.instance().clear();
+              confirm.hide();
+            });
+          Core.instance().session().destroy();
+          // TODO: redirect to home/login page
+        })
+        .show();
+    });
+
+    /**
+     *
+     * Sign In
+     */
+    $(".app-navbar .bt-sign-in").on("click", (e) => {
+      L.log("show-sign-in-dialog");
+      this.runtime.load('config.ini').then(runtimes => {
+        let runtimeGids = runtimes['sign-in-group'];
+        // console.log(runtimes, runtimeGids);
+        CmapApp.inst.modalSignIn = SignIn.instance({
+          gids: runtimeGids ?? null,
+          success: (user) => {
+            L.log("sign-in-success", user);
+            this.session.set("user", user);
+            this.setUser(user);
+            this.initCollab(user);
+            CmapApp.enableNavbarButton();
+            CmapApp.updateSignInOutButton();
+            CmapApp.inst.modalSignIn.hide();
+            KitBuildCollab.enableControl();
+            let status =
+              `<span class="mx-2 d-flex align-items-center status-user">` +
+              `<small class="text-dark fw-bold">${user.name}</small>` +
+              `</span>`;
+            StatusBar.instance().remove(".status-user").prepend(status);
+            this.logger.username = user.username;
+            // Save initial map!
+            let data = Object.assign(
+              {
+                cmid: null,
+                cmfid: null,
+                title: "Untitled",
+                direction: this.canvas.direction,
+                topic: null,
+                text: null,
+                type: CmapApp.defaultMapType,
+                author: this.user.username,
+                create_time: null,
+              },
+              KitBuildUI.buildConceptMapData(this.canvas)
+            ); // console.log(data); return
+            this.ajax
+              .post("kitBuildApi/saveConceptMap", { data: Core.compress(data) })
+              .then((conceptMap) => {
+                this.setConceptMap(conceptMap);
+                this.logger.setConceptMapId(conceptMap.map.cmid);
+                UI.success("Concept map has been initialized.").show();
+                L.log("cmap-initialized-empty", conceptMap.map);
+              })
+              .catch((error) => {
+                UI.error("Error saving concept map: " + error).show();
+              });
+          },
+        }).show();
+      });
+      // console.log("STATE DATA: ", stateData)
+      // console.log(this.runtime, runtimeGids);
+      
+    });
+  }
+
+  setUser(user = null) {
+    this.user = user;
+  }
+
+  setTopic(topic) {
+    CmapApp.topic = topic;
+    let statusTopic =
+      "" +
+      `<span class="status-topic d-flex align-items-center">` +
+      `  <span class="badge rounded-pill bg-primary ms-2">${topic.title}</span>` +
+      `</span>`;
+    StatusBar.instance().remove(".status-topic").append(statusTopic);
+  }
+
+  setText(text) {
+    CmapApp.text = text;
+    let statusText =
+      "" +
+      `<span class="status-text d-flex align-items-center">` +
+      `  <span class="badge rounded-pill bg-success ms-2">${text.title}</span>` +
+      `</span>`;
+    StatusBar.instance().remove(".status-text").append(statusText);
+  }
+
+  handleRefresh() {
+    let session = Core.instance().session();
+    let stateData = JSON.parse(localStorage.getItem(nativeStateKey(CmapApp.name)));
+    // console.log("STATE DATA: ", stateData)
+    session.getAll().then((sessions) => {
+      try {
+        if (stateData.logger) {
+          // restore previous logger data and sequence
+          this.logger.username = sessions.user ? sessions.user.username : null;
+          this.logger.seq = stateData.logger.seq;
+          this.logger.sessid = Core.instance().config().get("sessid");
+          this.logger.canvas = this.canvas;
+          this.logger.enable();
+
+          // re-bind logger as canvas event listener
+          if (CmapApp.loggerListener)
+            this.canvas.off("event", CmapApp.loggerListener);
+          CmapApp.loggerListener = this.logger.onCanvasEvent.bind(this.logger);
+          this.canvas.on("event", CmapApp.loggerListener);
+        }
+      } catch (error) {
+        console.warn(error);
+      }
+
+      let cmid = sessions.cmid;
+      if (cmid)
+        KitBuild.openConceptMap(cmid).then((conceptMap) => {
+          this.setConceptMap(conceptMap);
+          if (!conceptMap) return;
+          if (stateData && stateData.map) {
+            // console.log(stateData.direction)
+            this.canvas.cy.elements().remove();
+            this.canvas.cy.add(Core.decompress(stateData.map));
+            this.canvas.applyElementStyle();
+            this.canvas.toolbar.tools
+              .get(KitBuildToolbar.NODE_CREATE)
+              .setActiveDirection(stateData.direction);
+          } else {
+            this.canvas.cy.add(KitBuildUI.composeConceptMap(conceptMap));
+            this.canvas.toolbar.tools
+              .get(KitBuildToolbar.NODE_CREATE)
+              .setActiveDirection(conceptMap.map.direction);
+          }
+          this.canvas.toolbar.tools
+            .get(KitBuildToolbar.CAMERA)
+            .fit(null, { duration: 0 });
+          this.canvas.cy.elements(":selected").unselect();
+          this.logger.setConceptMapId(this.conceptMap.map.cmid);
+          L.log(
+            "restore-concept-map",
+            conceptMap ? conceptMap.map : null,
+            null,
+            {
+              includeMapData: conceptMap ? true : false,
+            }
+          );
+        });
+      let tid = sessions.tid;
+      let txid = sessions.txid;
+      if (tid)
+        this.ajax.get(`contentApi/getTopic/${tid}`).then((topic) => {
+          this.setTopic(topic);
+          L.log("restore-topic", { topic: topic ? topic.tid : null });
+        });
+      if (txid)
+        this.ajax.get(`kitBuildApi/getTextOfTopic/${txid}`).then((text) => {
+          this.setText(text);
+          L.log("restore-text", { text: text ? text.tid : null });
+        });
+
+      // init collaboration feature
+      CmapApp.enableNavbarButton(false);
+      if (sessions.user) {
+        this.setUser(sessions.user);
+        this.initCollab(sessions.user);
+        CmapApp.enableNavbarButton();
+        KitBuildCollab.enableControl();
+        this.logger.username = sessions.user.username;
+        let status =
+          `<span class="mx-2 d-flex align-items-center status-user">` +
+          `<small class="text-dark fw-bold">${sessions.user.name}</small>` +
+          `</span>`;
+        StatusBar.instance().remove(".status-user").prepend(status);
+      } else $(".app-navbar .bt-sign-in").trigger("click");
+
+      // listen to events for broadcast to collaboration room as commands
+      this.canvas.on("event", CmapApp.onCanvasEvent);
+    });
+  }
+
+  initCollab(user) {
+    CmapApp.collabInst = KitBuildCollab.instance("cmap", user, this.canvas, {
+        host: this.config.get('collabhost'),
+        port: this.config.get('collabport'),
+      }
+    );
+    CmapApp.collabInst.off("event", CmapApp.onCollabEvent);
+    CmapApp.collabInst.on("event", CmapApp.onCollabEvent);
+    KitBuildCollab.enableControl();
+  };
+  
+}
+
+CmapApp.canvasId = "goalmap-canvas";
+CmapApp.defaultMapType = "scratch";
+
+CmapApp.onBrowserStateChange = (event) => {
+  // console.warn(event)
+  L.log("browser-state-change", { from: event.oldState, to: event.newState });
+  if (event.newState == "terminated") {
+    let stateData = {};
+    if (CmapApp.inst && CmapApp.inst.logger)
+      stateData.logger = {
+        username: CmapApp.inst.logger.username,
+        seq: CmapApp.inst.logger.seq,
+        sessid: CmapApp.inst.logger.sessid,
+        enabled: CmapApp.inst.logger.enabled,
+      };
+    stateData.map = Core.compress(CmapApp.inst.canvas.cy.elements().jsons());
+    stateData.direction = $("#dd-direction .icon-active").data("direction");
+    let cmapAppStateData = JSON.stringify(Object.assign({}, stateData));
+    localStorage.setItem(nativeStateKey(CmapApp.name), cmapAppStateData);
+  }
+};
+
+// convert concept mapping event to collaboration command
+// App --> Server
+CmapApp.collab = (action, ...data) => {
+  // not connected? skip.
+  if (!CmapApp.collabInst || !CmapApp.collabInst.connected()) return;
+
+  switch (action) {
+    case "command":
+      {
+        let command = data.shift();
+        // console.warn(command, data);
+        CmapApp.collabInst
+          .command(command, ...data)
+          .then((result) => {
+            console.error(command, result);
+          })
+          .catch((error) => console.error(command, error));
+      }
+      break;
+    case "get-map-state":
+      {
+        CmapApp.collabInst
+          .getMapState()
+          .then((result) => {})
+          .catch((error) =>
+            UI.error("Unable to get map state: " + error).show()
+          );
+      }
+      break;
+    case "send-map-state":
+      {
+        CmapApp.collabInst
+          .sendMapState(...data)
+          .then((result) => {})
+          .catch((error) =>
+            UI.error("Unable to send map state: " + error).show()
+          );
+      }
+      break;
+    case "get-channels":
+      {
+        CmapApp.collabInst.tools
+          .get("channel")
+          .getChannels()
+          .then((channels) => {})
+          .catch((error) =>
+            UI.error("Unable to get channels: " + error).show()
+          );
+      }
+      break;
+  }
+};
+CmapApp.onCanvasEvent = (canvasId, event, data) => {
+  CmapApp.collab("command", event, canvasId, data);
+};
+
+// handles incoming collaboration event
+// Server --> App
+CmapApp.onCollabEvent = (event, ...data) => {
+  // console.warn(event, data)
+  switch (event) {
+    case "connect":
+    case "reconnect":
+      break;
+    case "join-room":
+      {
+        CmapApp.collab("get-map-state");
+      }
+      break;
+    case "socket-command":
+      {
+        let command = data.shift();
+        CmapApp.processCollabCommand(command, data);
+      }
+      break;
+    case "socket-get-map-state":
+      {
+        let requesterSocketId = data.shift();
+        CmapApp.generateMapState().then((mapState) => {
+          CmapApp.collab("send-map-state", requesterSocketId, mapState);
+        });
+      }
+      break;
+    case "socket-set-map-state":
+      {
+        let mapState = data.shift();
+        CmapApp.applyMapState(mapState).then(() => {
+          CmapApp.collab("get-channels");
+        });
+      }
+      break;
+  }
+};
+CmapApp.processCollabCommand = (command, data) => {
+  console.log(command, data);
+  switch (command) {
+    case "set-concept-map":
+      {
+        let conceptMap = data.shift();
+        let cyData = data.shift();
+        console.log(conceptMap, cyData);
+        CmapApp.inst.setConceptMap(conceptMap);
+        CmapApp.inst.canvas.cy.elements().remove();
+        CmapApp.inst.canvas.cy.add(cyData);
+        CmapApp.inst.canvas.applyElementStyle();
+        CmapApp.inst.canvas.canvasTool.clearCanvas().clearIndicatorCanvas();
+        CmapApp.inst.canvas.toolbar.tools
+          .get(KitBuildToolbar.CAMERA)
+          .fit(null, { duration: 0 });
+        CmapApp.inst.canvas.toolbar.tools
+          .get(KitBuildToolbar.NODE_CREATE)
+          .setActiveDirection(conceptMap.map.direction);
+        CmapApp.inst.canvas.toolbar.tools
+          .get(KitBuildToolbar.UNDO_REDO)
+          .clearStacks()
+          .updateStacksStateButton();
+      }
+      break;
+    case "move-nodes":
+      {
+        let canvasId = data.shift();
+        let moves = data.shift();
+        let nodes = moves.later;
+        if (Array.isArray(nodes))
+          nodes.forEach((node) =>
+            CmapApp.inst.canvas.moveNode(node.id, node.x, node.y, 200)
+          );
+      }
+      break;
+    case "redo-move-nodes":
+    case "undo-move-nodes":
+      {
+        let canvasId = data.shift();
+        let moves = data.shift();
+        let nodes = moves;
+        if (Array.isArray(nodes))
+          nodes.forEach((node) =>
+            CmapApp.inst.canvas.moveNode(node.id, node.x, node.y, 200)
+          );
+      }
+      break;
+    case "undo-centroid":
+    case "undo-move-link":
+    case "undo-move-concept":
+      {
+        let canvasId = data.shift();
+        let move = data.shift();
+        CmapApp.inst.canvas.moveNode(
+          move.from.id,
+          move.from.x,
+          move.from.y,
+          200
+        );
+      }
+      break;
+    case "centroid":
+    case "redo-centroid":
+    case "redo-move-link":
+    case "redo-move-concept":
+    case "move-link":
+    case "move-concept":
+      {
+        let canvasId = data.shift();
+        let move = data.shift();
+        CmapApp.inst.canvas.moveNode(move.to.id, move.to.x, move.to.y, 200);
+      }
+      break;
+    case "layout-elements":
+      {
+        let canvasId = data.shift();
+        let layoutMoves = data.shift();
+        let nodes = layoutMoves.later;
+        if (Array.isArray(nodes))
+          nodes.forEach((node) =>
+            CmapApp.inst.canvas.moveNode(
+              node.id,
+              node.position.x,
+              node.position.y,
+              200
+            )
+          );
+      }
+      break;
+    case "redo-layout-elements":
+    case "undo-layout-elements":
+    case "undo-layout":
+      {
+        let canvasId = data.shift();
+        let nodes = data.shift();
+        if (Array.isArray(nodes))
+          nodes.forEach((node) =>
+            CmapApp.inst.canvas.moveNode(
+              node.id,
+              node.position.x,
+              node.position.y,
+              200
+            )
+          );
+      }
+      break;
+    case "undo-disconnect-right":
+    case "undo-disconnect-left":
+    case "redo-connect-right":
+    case "redo-connect-left":
+    case "connect-right":
+    case "connect-left":
+      {
+        let canvasId = data.shift();
+        let edge = data.shift();
+        CmapApp.inst.canvas.createEdge(edge.data);
+      }
+      break;
+    case "undo-connect-right":
+    case "undo-connect-left":
+    case "redo-disconnect-right":
+    case "redo-disconnect-left":
+    case "disconnect-left":
+    case "disconnect-right":
+      {
+        let canvasId = data.shift();
+        let edge = data.shift();
+        CmapApp.inst.canvas.removeEdge(edge.data.source, edge.data.target);
+      }
+      break;
+    case "undo-move-connect-left":
+    case "undo-move-connect-right":
+      {
+        let canvasId = data.shift();
+        let moveData = data.shift();
+        CmapApp.inst.canvas.moveEdge(moveData.later, moveData.prior);
+      }
+      break;
+    case "redo-move-connect-left":
+    case "redo-move-connect-right":
+    case "move-connect-left":
+    case "move-connect-right":
+      {
+        let canvasId = data.shift();
+        let moveData = data.shift();
+        CmapApp.inst.canvas.moveEdge(moveData.prior, moveData.later);
+      }
+      break;
+    case "switch-direction":
+      {
+        let canvasId = data.shift();
+        let switchData = data.shift();
+        CmapApp.inst.canvas.switchDirection(switchData.prior, switchData.later);
+      }
+      break;
+    case "undo-disconnect-links":
+      {
+        let canvasId = data.shift();
+        let edges = data.shift();
+        if (!Array.isArray(edges)) break;
+        edges.forEach((edge) => {
+          CmapApp.inst.canvas.createEdge(edge.data);
+        });
+      }
+      break;
+    case "redo-disconnect-links":
+    case "disconnect-links":
+      {
+        let canvasId = data.shift();
+        let edges = data.shift();
+        if (!Array.isArray(edges)) break;
+        console.log(edges);
+        edges.forEach((edge) => {
+          CmapApp.inst.canvas.removeEdge(edge.data.source, edge.data.target);
+        });
+      }
+      break;
+    case "create-link":
+    case "create-concept":
+    case "redo-duplicate-link":
+    case "redo-duplicate-concept":
+    case "duplicate-link":
+    case "duplicate-concept":
+      {
+        let canvasId = data.shift();
+        let node = data.shift();
+        console.log(node);
+        CmapApp.inst.canvas.addNode(node.data, node.position);
+      }
+      break;
+    case "undo-duplicate-link":
+    case "undo-duplicate-concept":
+      {
+        let canvasId = data.shift();
+        let node = data.shift();
+        console.log(node);
+        CmapApp.inst.canvas.removeElements([node.data]);
+      }
+      break;
+    case "duplicate-nodes":
+      {
+        let canvasId = data.shift();
+        let nodes = data.shift();
+        if (!Array.isArray(nodes)) break;
+        nodes.forEach((node) =>
+          CmapApp.inst.canvas.addNode(node.data, node.position)
+        );
+      }
+      break;
+    case "undo-delete-node":
+    case "undo-clear-canvas":
+    case "undo-delete-multi-nodes":
+      {
+        let canvasId = data.shift();
+        let elements = data.shift();
+        CmapApp.inst.canvas.addElements(elements);
+      }
+      break;
+    case "delete-link":
+    case "delete-concept":
+    case "redo-delete-multi-nodes":
+    case "delete-multi-nodes":
+      {
+        let canvasId = data.shift();
+        let elements = data.shift();
+        CmapApp.inst.canvas.removeElements(
+          elements.map((element) => element.data)
+        );
+      }
+      break;
+    case "undo-update-link":
+    case "undo-update-concept":
+      {
+        let canvasId = data.shift();
+        let node = data.shift();
+        CmapApp.inst.canvas.updateNodeData(node.id, node.prior.data);
+      }
+      break;
+    case "redo-update-link":
+    case "redo-update-concept":
+    case "update-link":
+    case "update-concept":
+      {
+        let canvasId = data.shift();
+        let node = data.shift();
+        CmapApp.inst.canvas.updateNodeData(node.id, node.later.data);
+      }
+      break;
+    case "redo-concept-color-change":
+    case "undo-concept-color-change":
+      {
+        let canvasId = data.shift();
+        let changes = data.shift();
+        CmapApp.inst.canvas.changeNodesColor(changes);
+      }
+      break;
+    case "concept-color-change":
+      {
+        let canvasId = data.shift();
+        let changes = data.shift();
+        let nodesData = changes.later;
+        CmapApp.inst.canvas.changeNodesColor(nodesData);
+      }
+      break;
+    case "undo-lock":
+    case "undo-unlock":
+    case "redo-lock":
+    case "redo-unlock":
+    case "lock-edge":
+    case "unlock-edge":
+      {
+        let canvasId = data.shift();
+        let edge = data.shift();
+        CmapApp.inst.canvas.updateEdgeData(edge.id, edge);
+      }
+      break;
+    case "undo-lock-edges":
+    case "undo-unlock-edges":
+    case "redo-lock-edges":
+    case "redo-unlock-edges":
+      {
+        let canvasId = data.shift();
+        let lock = data.shift();
+        if (!lock) break;
+        if (!Array.isArray(lock.edges)) break;
+        lock.edges.forEach((edge) =>
+          CmapApp.inst.canvas.updateEdgeData(edge.substring(1), {
+            lock: lock.lock,
+          })
+        );
+      }
+      break;
+    case "lock-edges":
+    case "unlock-edges":
+      {
+        let canvasId = data.shift();
+        let edges = data.shift();
+        if (!Array.isArray(edges)) return;
+        edges.forEach((edge) =>
+          CmapApp.inst.canvas.updateEdgeData(edge.data.id, edge.data)
+        );
+      }
+      break;
+    case "redo-clear-canvas":
+    case "clear-canvas":
+      {
+        CmapApp.inst.canvas.reset();
+      }
+      break;
+    case "convert-type":
+      {
+        let canvasId = data.shift();
+        let map = data.shift();
+        let elements = map.later;
+        let direction = map.to;
+        CmapApp.inst.canvas.convertType(direction, elements);
+      }
+      break;
+    case "select-nodes":
+      {
+        let canvasId = data.shift();
+        let ids = data.shift();
+        ids = ids.map((id) => `#${id}`);
+        CmapApp.inst.canvas.cy.nodes(ids.join(", ")).addClass("peer-select");
+      }
+      break;
+    case "unselect-nodes":
+      {
+        let canvasId = data.shift();
+        let ids = data.shift();
+        ids = ids.map((id) => `#${id}`);
+        CmapApp.inst.canvas.cy.nodes(ids.join(", ")).removeClass("peer-select");
+      }
+      break;
+  }
+};
+
+// generate/apply map state
+CmapApp.generateMapState = () => {
+  return new Promise((resolve, reject) => {
+    let mapState = {
+      conceptMap: null,
+      cyData: [],
+    };
+    if (CmapApp.inst.conceptMap) {
+      CmapApp.inst.conceptMap.map.direction = CmapApp.inst.canvas.direction;
+      mapState = {
+        conceptMap: CmapApp.inst.conceptMap,
+        cyData: CmapApp.inst.canvas.cy.elements().jsons(),
+      };
+    }
+    resolve(mapState);
+  });
+};
+CmapApp.applyMapState = (mapState) => {
+  return new Promise((resolve, reject) => {
+    let conceptMap = mapState.conceptMap;
+    let cyData = mapState.cyData;
+    CmapApp.inst.setConceptMap(conceptMap);
+    CmapApp.inst.canvas.cy.elements().remove();
+    if (!conceptMap || !cyData) {
+      // console.log(mapState)
+    } else {
+      CmapApp.inst.canvas.cy.add(cyData ? cyData : {}).unselect();
+      CmapApp.inst.canvas.applyElementStyle();
+      CmapApp.inst.canvas.toolbar.tools
+        .get(KitBuildToolbar.CAMERA)
+        .fit(null, { duration: 0 });
+      CmapApp.inst.canvas.toolbar.tools
+        .get(KitBuildToolbar.NODE_CREATE)
+        .setActiveDirection(conceptMap.map.direction);
+      CmapApp.inst.canvas.toolbar.tools
+        .get(KitBuildToolbar.UNDO_REDO)
+        .clearStacks()
+        .updateStacksStateButton();
+    }
+    CmapApp.inst.canvas.canvasTool.clearCanvas().clearIndicatorCanvas();
+    resolve(mapState);
+  });
+};
+
+CmapApp.updateSignInOutButton = () => {
+  Core.instance().session().getAll().then(sessions => { 
+    // console.log(sessions)
+    if (sessions.user) {
+      $('.bt-sign-in').addClass('d-none');
+      $('.bt-logout').removeClass('d-none');
+      $('.bt-profile').removeClass('d-none');
+    } else {
+      $('.bt-sign-in').removeClass('d-none');
+      $('.bt-logout').addClass('d-none');
+      $('.bt-profile').addClass('d-none')
+    }
+  });
+};
+
+CmapApp.enableNavbarButton = (enabled = true) => {
+  $(".app-navbar .app-buttons button").prop("disabled", !enabled);
+  CmapApp.inst.canvas.toolbar.tools.forEach((tool) => {
+    tool.enable(enabled);
+  });
+};
+
+window.KBNativeClass=CmapApp;window.KBNativeLogBridge=typeof L!=="undefined"?L:null;</script><script>/* 変更点はここに隔離。web/upstream のアプリ・キャンバス・logger は変更しない。 */
+const nativeDOM=id=>document.getElementById(id);
+// 元アプリのHTML組立て箇所を一箇所で保護する。採点用ラベル文字列は変更しない。
+for(const method of ['html','append','prepend','before','after']){const original=$.fn[method];$.fn[method]=function(...args){return original.apply(this,args.map(value=>typeof value==='string'?DOMPurify.sanitize(value):value));};}
+const OriginalSimpleMDE=SimpleMDE;window.SimpleMDE=class extends OriginalSimpleMDE{constructor(options){super(Object.assign({},options,{autoDownloadFontAwesome:false,spellChecker:false}));}};
+function nativeStatus(message){nativeDOM('status').textContent=String(message);}
+function nativeStateKey(name){return 'kb.state.'+client.user.user_id+'.'+name;}
+let nativeUnloading=false;const nativeRequests=new Set();
+window.addEventListener('pagehide',()=>{nativeUnloading=true;for(const request of nativeRequests)request.abort();});
+window.addEventListener('pageshow',event=>{nativeUnloading=false;if(event.persisted){client.flushing=null;client.flush();}});
+const nativeAPI={async post(body){
+  if(!KB_CONFIG.endpoint)throw new Error('web/config.json にGASのURLを設定してください');
+  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),25000);nativeRequests.add(abort);
+  try{const response=await fetch(KB_CONFIG.endpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),credentials:'omit',signal:abort.signal});if(!response.ok)throw new Error('HTTP '+response.status);const r=await response.json();if(!r.ok){const error=new Error(r.error);error.code=r.code;throw error;}return r;}
+  catch(error){if(nativeUnloading)return new Promise(()=>{});throw error;}
+  finally{clearTimeout(timer);nativeRequests.delete(abort);}
+}};
+const client={page:crypto.randomUUID(),seq:0,user:null,session:null,flushing:null,paused:false,retry:1000,
+  async login(token){await this.accept(await nativeAPI.post({action:'login',idToken:token}),true);},
+  async accept(r,signIn=false){if(this.user&&this.user.user_id!==r.user_id)throw new Error('同じアカウントで再ログインしてください');if(KB_PAGE.teacher&&!r.teacher)throw new Error('教員専用です');const first=!this.user;this.user=r;this.session=r.session;this.paused=false;localStorage.setItem('kb.native.auth',JSON.stringify({session:r.session}));nativeDOM('auth').hidden=true;nativeDOM('workspace').hidden=false;nativeDOM('account').textContent=r.user_id;nativeDOM('logout').hidden=false;if(signIn)this.event({action:'sign-in-success',data:JSON.stringify({provider:'google'}),ua:navigator.userAgent});if(first)await nativeStart();await this.flush();},
+  async call(action,data){try{return await nativeAPI.post(Object.assign({},data,{action,session:this.session}));}catch(e){if(e.code==='auth'){this.paused=true;nativeDOM('auth').hidden=false;nativeDOM('auth-message').textContent=e.message;}throw e;}},
+  prefix(){return 'kb.native.event.'+this.user.user_id+'.';},
+  event(raw){if(!this.user)return;const seq=this.seq+1,e={native:raw,action:raw.action,page_session:this.page,seq,event_id:this.page+'-'+seq,client_ts:Date.now(),app_version:KB_CONFIG.appVersion};localStorage.setItem(this.prefix()+e.event_id,JSON.stringify(e));this.seq=seq;this.update();return e;},
+  queued(){const p=this.prefix(),out=[];for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith(p))out.push({key,event:JSON.parse(localStorage.getItem(key))});}return out.sort((a,b)=>a.event.page_session.localeCompare(b.event.page_session)||a.event.seq-b.event.seq);},
+  async flush(){if(!this.user||this.paused||!navigator.onLine)return false;if(this.flushing)return this.flushing;this.flushing=(async()=>{await Promise.resolve();try{for(;;){const queue=this.queued();if(!queue.length){this.retry=1000;this.update();return true;}let size=0;const batch=[];for(const item of queue){const n=new TextEncoder().encode(JSON.stringify(item.event)).length;if(item.event.page_session!==queue[0].event.page_session||batch.length>=this.user.maxBatch||size+n>170000)break;size+=n;batch.push(item);}if(!batch.length)throw new Error('操作ログが送信上限を超えています');const ack=await this.call('log',{events:batch.map(x=>x.event)});for(const x of batch)if(x.event.seq<=ack.ack)localStorage.removeItem(x.key);this.update();}}catch(e){nativeStatus('送信待ち: '+e.message);if(e.code!=='auth'){clearTimeout(this.retryTimer);this.retryTimer=setTimeout(()=>this.flush(),this.retry);this.retry=Math.min(60000,this.retry*2);}return false;}finally{this.flushing=null;}})();return this.flushing;},
+  update(){nativeStatus(this.queued().length?'ログ送信待ち '+this.queued().length+' 件':'ログ送信済み');},
+  async init(){mountGoogle(token=>this.login(token).catch(e=>{nativeDOM('auth-message').textContent=e.message;}));const prior=localStorage.getItem('kb.native.auth');if(prior)try{await this.accept(await nativeAPI.post({action:'resume',session:JSON.parse(prior).session}));}catch(e){nativeDOM('auth-message').textContent=e.message;}setInterval(()=>this.flush(),5000);},
+  async logout(){this.event({action:'sign-out',data:'{}',ua:navigator.userAgent});await this.flush();localStorage.removeItem('kb.native.auth');location.reload();}
+};
+const nativeRevisions=new Map();
+// Core.compress の apply 引数数制限を避け、分析用の多数マップを同じgzip/base64形式へ戻す。
+function nativeCompressMaps(maps){const bytes=pako.gzip(JSON.stringify(maps)),parts=[];for(let i=0;i<bytes.length;i+=8192)parts.push(String.fromCharCode(...bytes.subarray(i,i+8192)));return btoa(parts.join(''));}
+let nativeSession={};
+function nativeSessionLoad(){try{nativeSession=JSON.parse(sessionStorage.getItem('kb.native.session.'+client.user.user_id)||'{}');}catch(_){nativeSession={};}nativeSession.user={username:client.user.user_id,name:client.user.user_id,gids:client.user.group||'ALL',rid:client.user.teacher?'TEACHER':'STUDENT'};const params=new URLSearchParams(location.search);if(params.has('kid')&&params.get('kid')!==nativeSession.kid){delete nativeSession.lmid;delete nativeSession.flmid;}for(const [k,v] of params)if(['cmid','kid','lmid','flmid','tid'].includes(k))nativeSession[k]=v;}
+function nativeSessionSave(){sessionStorage.setItem('kb.native.session.'+client.user.user_id,JSON.stringify(nativeSession));}
+Ajax.prototype.send=function(method,url,data,options){
+  const route=String(url).replace(Core.instance().config('baseurl'),'').replace(/^\//,''),parts=route.split('/'),api=parts[0].toLowerCase(),operation=(parts[1]||'').toLowerCase();let d=data instanceof FormData?Object.fromEntries(data):data||{};
+  if(api==='coresession'){
+    if(operation==='set'){if('key' in d)nativeSession[d.key]=d.data;else Object.assign(nativeSession,d);nativeSessionSave();return Promise.resolve(true);}
+    if(operation==='unset'){delete nativeSession[d.key];nativeSessionSave();return Promise.resolve(true);}
+    if(operation==='destroy'){nativeSession={user:nativeSession.user};nativeSessionSave();return Promise.resolve(true);}
+    return Promise.resolve(d.key?nativeSession[d.key]:Object.assign({},nativeSession));
+  }
+  if(api==='coreruntime')return Promise.resolve({'sign-in-group':client.user.group||'ALL'});
+  if(api==='corelanguage')return Promise.resolve(KB_LANGUAGE);
+  const decoded=d.data&&typeof d.data==='string'?Core.decompress(d.data):d;
+  const kind=/sets$/.test(operation)?'sets':/conceptmap/.test(operation)?'cmap':/kit/.test(operation)?'kit':/learner/.test(operation)?'lmap':/topic/.test(operation)?'topic':/group/.test(operation)?'group':/text/.test(operation)?'text':null;
+  const id=kind==='lmap'?decoded.lmid:kind==='kit'||kind==='sets'?decoded.kid:kind==='cmap'?decoded.cmid:decoded.tid||decoded.gid||d.kid||parts[2];
+  const body={route,data:d,request_id:crypto.randomUUID(),revision:nativeRevisions.get(kind+':'+id)||0};
+  return client.call('native.api',body).then(async r=>{if(Object.hasOwn(r,'native_next')&&r.native_next!==null){const maps=Core.decompress(r.coreResult);let next=r.native_next;while(next!==null){nativeStatus('分析用マップを取得中 '+maps.length+' 件');const chunk=await client.call('native.api',{...body,data:{...d,native_offset:next}});maps.push(...Core.decompress(chunk.coreResult));next=chunk.native_next;}r.coreResult=nativeCompressMaps(maps);}this.response=r;const v=r.coreResult;if(v&&v._revision&&kind){const key=v.map?(v.map.cmid&&kind==='cmap'?v.map.cmid:kind==='kit'?v.map.kid:v.map.lmid):v.tid||v.gid||id;nativeRevisions.set(kind+':'+key,v._revision);}return v;});
+};
+// 共同編集コード・socket.ioを読み込まない。原アプリの静的参照だけを閉じる。
+const KitBuildCollab={enableControl(){},room(){return null;}};
+Logger.shouldSkip=()=>false;
+// 原版は mixed の既存リンク→追加概念を lConcepts で見つけられない。
+// 入力の概念辞書だけ補完し、保存構造・比較規則・原版ソースは変えない。
+const nativeOriginalCompose=Analyzer.composePropositions;
+Analyzer.composePropositions=function(map){const concepts=map?.concepts;if(map?.conceptMap&&map.concepts_ext?.length)map.concepts=concepts.concat(map.concepts_ext.filter(c=>!concepts.some(v=>v.cid===c.cid)));try{return nativeOriginalCompose.call(this,map);}finally{if(map&&concepts)map.concepts=concepts;}};
+const originalBeacon=navigator.sendBeacon.bind(navigator);
+navigator.sendBeacon=(url,data)=>{if(String(url).endsWith('logApi/log')){const raw=Object.fromEntries(data.entries());raw.username=client.user.user_id;client.event(raw);return true;}return originalBeacon(url,data);};
+function nativeCatch(promise){return Promise.resolve(promise).catch(e=>nativeStatus(e.message));}
+async function nativeStart(){
+  if(!client.user.teacher)document.querySelectorAll('header nav a').forEach(a=>{if(!['index.html','mixed.html','extended.html'].includes(a.getAttribute('href')))a.hidden=true;});
+  nativeSessionLoad();Core.instance().config().set('sessid',client.page);Core.instance().config().set('seq',0);Language.instance().lang=KB_LANGUAGE;
+  const script=document.createElement('script');script.textContent=nativeDOM('native-app-source').textContent;document.body.append(script);
+  const App=window.KBNativeClass;
+  const instantiate=App.instance;App.instance=function(...args){const result=instantiate.apply(this,args);if(result)App.inst=result;return result;};
+  if(App.prototype.initCollab)App.prototype.initCollab=function(){};
+  if(App.onCanvasEvent)App.onCanvasEvent=function(){};
+  if(App.prototype.setConceptMap){const original=App.prototype.setConceptMap;App.prototype.setConceptMap=function(map){const r=original.call(this,map);if(this.logger?.setConceptMap)this.logger.setConceptMap(map);if(this.logger?.setConceptMapId)this.logger.setConceptMapId(map?.map.cmid);return r;};}
+  if(!KB_PAGE.ready)$(function(){App.inst=App.instance();});
+  await new Promise(resolve=>$(resolve));await new Promise(resolve=>setTimeout(resolve,50));
+  window.nativeApp=App.inst;window.nativeCanvas=nativeApp.canvas||nativeApp.kbui?.canvases.values().next().value;
+  if(nativeCanvas)new ResizeObserver(()=>requestAnimationFrame(()=>{nativeCanvas.cy.resize();nativeCanvas.canvasTool.resizeCanvas();})).observe(nativeCanvas.cy.container());
+  if(nativeCanvas){let frame;document.addEventListener('scroll',()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>nativeCanvas.cy.resize());},{capture:true,passive:true});}
+  // 原版は画面全体を固定配置するため、ヘッダー折返しによる位置変化を検知しない。
+  // 入力より前に座標だけを更新し、選択中のハンドルを維持する。
+  for(const value of Object.values(nativeApp)){if(!value?.canvases)continue;for(const canvas of value.canvases.values())for(const type of ['pointerdown','mousedown','touchstart'])canvas.cy.container().addEventListener(type,()=>canvas.cy.renderer().invalidateContainerClientCoordsCache(),{capture:true,passive:true});}
+  // makekit/admin画面も同じLoggerを使う。元にLoggerのある画面には二重に登録しない。
+  if(nativeCanvas&&!nativeApp.logger){nativeApp.logger=(KB_PAGE.teacher?CmapLogger.instance(client.user.user_id,0,client.page,nativeCanvas):KitBuildLogger.instance(client.user.user_id,0,client.page,nativeCanvas,nativeApp.conceptMap)).enable();nativeCanvas.on('event',nativeApp.logger.onCanvasEvent.bind(nativeApp.logger));if(window.KBNativeLogBridge)KBNativeLogBridge.log=nativeApp.logger.log.bind(nativeApp.logger);}
+  $('.cgpass,.bt-profile,.bt-sign-in,.bt-logout,.bt-collab,.bt-share').hide();
+  document.querySelectorAll('button').forEach(b=>{if(!b.textContent.trim()&&!b.getAttribute('aria-label'))b.setAttribute('aria-label',b.title||b.className);});
+  if(KB_PAGE.name==='index'){
+    await nativeTaskList();
+    if(nativeSession.kid&&!nativeSession.lmid){const kit=await Core.instance().ajax().get('kitBuildApi/openKitMap/'+nativeSession.kid),draft=await Core.instance().ajax().post('kitBuildApi/getLastDraftLearnerMapOfUser',{kid:nativeSession.kid});App.parseKitMapOptions(kit);await nativeApp.openLearnerMap(kit,draft);}
+  }
+  if(client.user.teacher)nativeTeacherControls();
+  document.querySelectorAll('.status-panel').forEach(el=>{el.tabIndex=0;el.setAttribute('aria-label','マップと利用者の状態');});
+  if(KB_PAGE.name==='dynamic')nativeDynamicControls();
+  const labelControls=()=>{document.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(el=>{if(!el.getAttribute('aria-label')&&!el.labels?.length)el.setAttribute('aria-label',el.placeholder||el.name||el.id||'入力');});document.querySelectorAll('button').forEach(el=>{if(!el.getAttribute('aria-label'))el.setAttribute('aria-label',el.textContent.trim()||el.getAttribute('data-tippy-content')||el.title||el.className);});document.querySelectorAll('[role=button]').forEach(el=>{if(el.querySelector('input,button,select')){el.setAttribute('role','group');el.tabIndex=0;el.onkeydown=e=>{if(e.key==='Enter')el.click();};}});};labelControls();new MutationObserver(labelControls).observe(nativeDOM('workspace'),{childList:true,subtree:true});
+  nativeDOM('native-ready').textContent='ready';
+}
+async function nativeTaskList(){const r=await client.call('native.api',{route:'kitBuildApi/getKitListOfGroups/ALL'}),host=nativeDOM('task-list');host.replaceChildren();for(const task of r.coreResult){const a=document.createElement('a');a.href='index.html?kid='+encodeURIComponent(task.kid);a.textContent=task.name;host.append(a,document.createTextNode(' '));}}
+function nativeDownload(name,text){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function nativeTeacherControls(){
+  const host=nativeDOM('task-list');
+  if(KB_PAGE.name==='teacher'){
+    const label=document.createElement('label');label.textContent='ゴールマップ JSON 取込 ';const input=document.createElement('input');input.type='file';input.id='native-import';input.accept='.json,application/json';label.append(input);host.append(label);
+    input.onchange=()=>nativeCatch((async()=>{const raw=JSON.parse(await input.files[0].text()),data=Object.assign({},raw.map||{},raw);delete data.map;data.cmid=null;const map=await Core.instance().ajax().post('kitBuildApi/saveConceptMap',{data:Core.compress(data)});nativeApp.setConceptMap(map);nativeCanvas.reset();nativeCanvas.cy.add(KitBuildUI.composeConceptMap(map));nativeCanvas.applyElementStyle();await nativeCanvas.toolbar.tools.get(KitBuildToolbar.CAMERA).fit(null,{duration:0});nativeApp.logger.setConceptMapId(map.map.cmid);nativeApp.logger.log('import-map',map.map,null,{includeMapData:true});})());
+  }
+  const csv=document.createElement('button');csv.id='native-submissions-csv';csv.textContent='提出 CSV';csv.onclick=()=>nativeCatch((async()=>{let offset=0,part=0;do{const r=await Core.instance().ajax().post('gasApi/submissionsCsv',{offset});nativeDownload('submissions-'+(++part)+'.csv',r.csv);offset=r.next;}while(offset!==null);})());host.append(csv);
+  const date=document.createElement('input');date.id='native-log-date';date.type='text';date.value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).replaceAll('-','');date.setAttribute('aria-label','ログ日付 YYYYMMDD');host.append(date);
+  const logs=document.createElement('button');logs.id='native-logs-csv';logs.textContent='ログ CSV';logs.onclick=()=>nativeCatch((async()=>{let offset=0,index=0;do{const r=await client.call('logs.csv',{date:date.value,offset});const cell=v=>'"'+String(v??'').replace(/^[\s\u0000-\u001f]*[=+@-]/,s=>"'"+s).replaceAll('"','""')+'"';nativeDownload('logs-'+date.value+'-'+(++index)+'.csv','\uFEFF'+[r.header,...r.rows].map(row=>row.map(cell).join(',')).join('\r\n'));offset=r.next;}while(offset!==null);})());host.append(logs);
+}
+function nativeDynamicControls(){
+  $('.bt-proposition-set-analysis').on('click',()=>{$('.bt-teacher-map').trigger('click');$('.bt-group-map').trigger('click');});
+  $('.bt-map-dev-chart').on('click',()=>nativeCatch((async()=>{
+    const selected=document.querySelector('#list-learnermap .learnermap.active');if(!selected)throw new Error('学習者マップを選択してください');const lm=nativeApp.learnerMaps.get(selected.dataset.lmid),uid=lm.map.author,day=nativeDOM('native-log-date').value;let offset=0,events=[];
+    do{const r=await Core.instance().ajax().post('gasApi/history',{date:day,offset,user_id:uid,snapshots:true});events.push(...r.items);offset=r.next;}while(offset!==null);
+    events.sort((a,b)=>a.client_ts-b.client_ts||a.event_id.localeCompare(b.event_id));
+    let dialog=nativeDOM('native-history');if(dialog)dialog.remove();dialog=document.createElement('dialog');dialog.id='native-history';dialog.setAttribute('aria-label','マップの変化と再生');const title=document.createElement('h2');title.textContent=uid+' のマップの変化';dialog.append(title);const close=document.createElement('button');close.textContent='閉じる';close.onclick=()=>dialog.close();dialog.append(close);
+    const table=document.createElement('table');table.className='table table-sm';const caption=document.createElement('caption');caption.textContent='時系列のノード・接続・命題数。操作を選ぶと元のキャンバスに再生します。';table.append(caption);const head=document.createElement('tr');for(const text of ['操作','時刻','概念','リンク','接続','命題']){const th=document.createElement('th');th.textContent=text;head.append(th);}table.append(head);
+    for(const e of events){const tr=document.createElement('tr'),td=document.createElement('td'),button=document.createElement('button');button.textContent=e.action;button.onclick=()=>nativeCatch((async()=>{const r=await Core.instance().ajax().post('gasApi/history',{date:day,offset:0,user_id:uid,event_id:e.event_id});let found=r.items.find(x=>x.event_id===e.event_id),next=r.next;while(!found&&next!==null){const chunk=await Core.instance().ajax().post('gasApi/history',{date:day,offset:next,user_id:uid,event_id:e.event_id});found=chunk.items.find(x=>x.event_id===e.event_id);next=chunk.next;}if(!found?.map)throw new Error('スナップショットがありません');nativeCanvas.reset();nativeCanvas.cy.add(Core.decompress(found.map));nativeCanvas.applyElementStyle();await nativeCanvas.toolbar.tools.get(KitBuildToolbar.CAMERA).fit(null,{duration:0});dialog.close();})());td.append(button);tr.append(td);for(const v of [new Date(e.client_ts).toLocaleTimeString(),e.nc,e.nl,e.ne,e.np]){const cell=document.createElement('td');cell.textContent=v;tr.append(cell);}table.append(tr);}dialog.append(table);document.body.append(dialog);dialog.showModal();
+  })()));
+}
+nativeDOM('logout').onclick=()=>nativeCatch(client.logout());
+window.addEventListener('online',()=>client.flush());
+document.addEventListener('visibilitychange',()=>{if(client.user&&document.visibilityState==='visible')client.flush();});
+nativeCatch(client.init());
+</script></body></html>

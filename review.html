@@ -1,0 +1,837 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kit-Build review</title><meta id="core-client-config" data-core="eyJiYXNldXJsIjoiLi8iLCJzZXNzaWQiOiIiLCJzZXEiOjB9"><meta id="core-lang"><link rel="stylesheet" href="upstream/.asset/vendor/bootstrap/css/bootstrap.min.css"><link rel="stylesheet" href="upstream/.asset/vendor/bootstrap-icons/bootstrap-icons.css"><link rel="stylesheet" href="upstream/.asset/vendor/animate.min.css"><link rel="stylesheet" href="upstream/.asset/vendor/huebee/huebee.min.css"><link rel="stylesheet" href="upstream/.asset/vendor/general-ui/g.ui.css"><link rel="stylesheet" href="upstream/.asset/vendor/kitbuild/kbui.css"><link rel="stylesheet" href="upstream/cmap/asset/cmap.css"><link rel="stylesheet" href="upstream/kitbuild/asset/recompose.css"><link rel="stylesheet" href="upstream/.asset/vendor/simplemde/simplemde.min.css"><link rel="stylesheet" href="upstream/.asset/vendor/highlight/default.min.css"><link rel="stylesheet" href="upstream/admin/module/analyzer/analyzer.css"><style>html,body{height:100%;margin:0}body{font-family:system-ui,sans-serif;color:#20252b;background:#f5f7f9}header{background:#fff;border-bottom:1px solid #cad0d5;padding:6px 10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}nav{display:flex;gap:12px;flex-wrap:wrap}header a{font-size:.85rem}#status{font-size:.8rem;margin-left:auto}#auth{padding:24px;max-width:600px;margin:auto}#workspace[hidden],#auth[hidden]{display:none!important}#native-shell{height:calc(100dvh - 100px);min-height:400px;display:flex;flex-direction:column}#native-shell>.vh-100{height:100%!important;min-height:0}#native-shell .flex-fill{min-height:0;min-width:0}.kb-cy{min-height:200px;touch-action:none}.kb-toolbar{flex-wrap:wrap!important}.app-navbar{flex-wrap:wrap;gap:3px;border-left-color:#b52121!important}.kb-container{min-width:0}.app-navbar .flex-fill{display:none}#native-ready{display:none}.analyzer-sidebar{overflow:auto;max-width:40vw}.modal,.kb-dialog{max-width:100vw}.kb-dialog{max-height:90dvh;overflow:auto}footer{font-size:.7rem;padding:2px 8px}#task-list a{display:inline-block;padding:5px}button:focus-visible,a:focus-visible{outline:3px solid #193da0!important}#admin-sidebar-panel{display:none}.text-secondary,.text-muted{color:#505963!important}.toast-content{color:#182026!important;filter:none!important}a{color:#0645ad}@media(max-width:600px){header{gap:5px}nav{gap:7px}.app-navbar{padding-left:4px!important;border-left-width:0!important}#native-shell{height:calc(100dvh - 160px)}.kb-toolbar .btn{padding:4px}.analyzer-sidebar{flex-basis:160px!important}footer{font-size:.65rem}}
+/* 原版 admin/asset/css/admin.css のスクロール用クラス。長い一覧が下部ツールを覆わない。 */
+.scroll-y{overflow-y:auto;overflow-x:hidden}.scroll-x{overflow-x:auto;overflow-y:hidden}.scroll{overflow:scroll}
+
+/* 元ビューの絶対配置Homeが背景の外に置かれてもコントラストを維持する。 */
+#native-shell a.position-absolute{background:#a62020;min-height:47px}
+.toast-container{max-width:calc(100vw - 16px)!important;right:8px}
+.text-primary{color:#08428c!important}
+dialog{max-width:95vw;max-height:85dvh;overflow:auto}
+</style><link rel="stylesheet" href="assets/font-awesome/css/font-awesome.min.css"></head><body><header><strong>Kit-Build</strong><span id="account"></span><button id="logout" hidden>ログアウト</button><nav aria-label="画面"><a href="teacher.html">マップ作成</a> <a href="makekit.html">キット作成</a> <a href="tmap.html">マップ管理</a> <a href="kits.html">キット管理</a> <a href="lmaps.html">提出</a> <a href="topics.html">トピック</a> <a href="grouping.html">組分け</a> <a href="analyzer.html">静的分析</a> <a href="dynamic.html">動的分析</a> <a href="index.html">学習者</a> <a href="mixed.html">Mixed</a> <a href="extended.html">Extended</a><a href="kitsets.html">段階キット</a></nav><span id="status" role="status"></span></header><main><section id="auth"><h1>Google ログイン</h1><p id="auth-message">各自のGoogleアカウントでログインしてください。</p><div id="google-button"></div></section><section id="workspace" hidden aria-label="概念マップ作業"><div id="task-list"></div><div id="admin-sidebar-panel"></div><div id="native-shell"><div class="d-flex flex-column vh-100">
+  <div class="app-navbar d-flex p-2 border-bottom justify-content-between">
+    <span class="left-stack">
+      <div class="btn-group btn-group-sm" id="review-modify-map">
+        <button class="bt-modify btn btn-sm btn-primary pe-4"><i class="bi bi-chevron-left mx-2"></i><i class="bi bi-pencil-square"></i> Modify My Map</button>
+      </div>
+    </span>
+    <span class="center-stack">  
+      <div class="btn-group btn-group-sm ms-2" id="review-mymap">
+        <button class="bt-mymap btn btn-primary"><i class="bi bi-person"></i> My Map</button>
+      </div>
+      <div class="btn-group btn-group-sm ms-2" id="review-comparison">
+        <button class="bt-comparison btn btn-warning"><i class="bi bi-shuffle"></i> Comparison Map</button>
+      </div>
+      <div class="btn-group btn-group-sm ms-2" id="review-readcontent">
+        <button class="bt-content btn btn-sm btn-secondary"><i class="bi bi-file-text-fill"></i> Contents</button>
+      </div>
+    </span>
+    <span class="right-stack">
+      <div class="btn-group btn-group-sm ms-5" id="review-finish">
+        <button class="bt-finish btn btn-danger ps-4"><i class="bi bi-flag-fill"></i> Finish <i class="bi bi-chevron-right mx-2"></i></button>
+      </div>
+    </span>
+  </div>
+  <div class="d-flex flex-fill align-items-stretch p-2">
+    <!-- container of this layout template must have a display: flex style -->
+<!-- or add d-flex Bootstrap class to this layout's container/parent   -->
+<div class="kb-container d-flex flex-fill flex-column border bg-white rounded">
+  <div class="kb-toolbar p-1 d-flex align-items-center justify-content-between bg-light border-bottom">
+    <span class="left-stack"></span>
+    <span class="center-stack"><span class="btn btn-sm">&nbsp;</span></span>
+    <span class="right-stack"></span>
+  </div>
+  <div id="review-canvas" class="kb-cy flex-fill"></div>
+</div>  </div>
+  <div class="d-flex">
+    <div class="status-panel flex-fill m-2 mt-0 d-flex" style="overflow-x: scroll">&nbsp;</div>
+    <div class="status-control text-end m-2 mt-0"><button class="btn btn-sm">&nbsp;</button></div>
+  </div>
+</div>
+
+  <div id="kit-content-dialog" class="card d-none">
+    <h6 class="card-header d-flex">
+      <span class="drag-handle flex-fill"><i class="dialog-icon bi bi-file-text"></i> <span class="dialog-title">Content</span></span>
+      <i class="bi bi-x-lg bt-close bt-x" role="button"></i>
+    </h6>
+    <div class="card-body position-relative overflow-hidden overflow-scroll d-flex flex-fill mb-3">
+      <div class="content text-secondary">
+        <!-- <p>Est ex sunt exercitation exercitation voluptate veniam ad minim et magna ea sint. Sint Lorem consequat ex ullamco sint irure labore nisi nulla pariatur culpa quis excepteur officia. Exercitation qui consequat ipsum labore nostrud cillum incididunt eiusmod aliquip.</p>
+
+        <p>
+        Labore reprehenderit laborum excepteur eiusmod et. Culpa laborum excepteur irure mollit adipisicing ut anim sunt veniam. Quis laborum cupidatat id id ea do dolor velit. Aliqua aliquip exercitation proident consequat ullamco anim aute occaecat deserunt cillum deserunt. Esse magna labore dolor anim amet.</p>
+
+        <p>
+        Et enim irure excepteur enim est proident est tempor tempor velit. Laborum ex exercitation nulla anim incididunt nisi fugiat cillum officia fugiat dolor ad proident. Ad laborum eiusmod fugiat laboris sunt labore. Enim consectetur tempor minim nisi proident nulla ex pariatur et eu Lorem do sint non. Minim adipisicing do fugiat magna fugiat veniam do veniam.</p>
+
+        <p>
+        Dolore ipsum reprehenderit sint anim. Minim non reprehenderit quis amet est exercitation incididunt ad dolore do proident. Reprehenderit ullamco aute irure consequat sunt nulla sunt exercitation. In ullamco occaecat ipsum Lorem elit labore consectetur cillum sunt velit.</p>
+
+        <p>
+        Non nulla exercitation consequat minim anim qui eiusmod deserunt aliquip proident ea laborum consequat amet. Nisi aliqua sit commodo commodo aliquip sunt sint qui do laboris nisi cupidatat. Occaecat proident et reprehenderit esse dolor.</p> -->
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <span>
+        <span class="bt-scroll-top btn btn-sm ms-1 btn-primary px-3"><i class="bi bi-chevron-bar-up"></i> Back to Top</span>
+        <span class="bt-scroll-more btn btn-sm ms-1 btn-primary px-3"><i class="bi bi-chevron-down"></i> More</span>
+      </span>
+      <span>
+        <button class="btn btn-sm btn-secondary bt-close px-3">閉じる</button>
+        <button class="btn btn-sm resize-handle pe-0 ps-3"><i class="bi bi-textarea-resize"></i></button>
+      </span>
+    </div>
+  </div>
+
+
+  <div id="feedback-dialog" class="card d-none">
+    <h6 class="card-header d-flex">
+      <span class="drag-handle flex-fill"><i class="dialog-icon bi bi-eye-fill me-2"></i> <span class="dialog-title">Map Comparison</span></span>
+      <i class="bi bi-x-lg bt-close bt-x" role="button"></i>
+    </h6>
+    <div class="card-body">
+      <div class="feedback-content"></div>
+    </div>
+    <div class="card-footer text-end">
+      <button class="btn btn-sm btn-secondary bt-cancel bt-close px-5">了解</button>
+    </div>
+  </div>
+<!-- Dialog Modal -->
+<div class="modal" id="modal-dialog" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content shadow">
+      <div class="modal-body">
+        <div class="dialog-head">
+          <div class="dialog-title fw-bold"></div>
+          <hr>
+        </div>
+        <div class="dialog-body d-flex align-items-center">
+          <i class="dialog-icon fs-1 me-3 ms-2"></i>
+          <div class="dialog-content" style="font-size:.9rem"></div>
+        </div>
+        <hr>
+        <div class="dialog-foot">
+          <button type="button" class="btn btn-sm btn-secondary bt-negative px-2 mx-2 mb-2">いいえ</button>
+          <button type="button" class="btn btn-sm btn-primary bt-positive px-2 mb-2">はい</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /Dialog Modal -->
+<!-- Loading Modal -->
+<div class="modal" id="modal-loading" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="modal-loading text-center text-primary">
+          <div class="animation"></div>
+          <div class="mt-2"><span class="loading-text text-dark"></span></div>
+        </div>
+        <div id="modal-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /Loading Modal -->
+<!-- SignIn Modal -->
+<div class="card d-none shadow" id="modal-sign-in" tabindex="-1" aria-hidden="true">
+  <div class="card-body mx-3 text-center">
+    <form name="form-sign-in" autocomplete="off">
+      <h1 class="h3 mb-4 mt-4 fw-normal">Sign in</h1>
+      <div class="form-floating">
+        <input type="text" class="form-control rounded-0 rounded-top" id="input-username" placeholder="Username" autocomplete="new-password" style="margin-bottom: -1px;">
+        <label for="input-username">Username</label>
+      </div>
+      <div class="form-floating">
+        <input type="password" class="form-control rounded-0 rounded-bottom" id="input-password" placeholder="Password" autocomplete="new-password">
+        <label for="input-password">Password</label>
+      </div>
+
+      <div class="checkbox mb-3 mt-2 mx-2">
+        <label> <input type="checkbox" id="input-remember-me" value="remember-me"> Remember me </label>
+      </div>
+      <button class="w-100 btn btn-lg btn-primary bt-sign-in" type="submit">Sign in</button>
+      <div id="sign-in-filter" class="text-center mt-3"></div>
+      <p class="mt-5 mb-3 text-muted">&copy; 2017–2026</p>
+    </form> 
+  </div>
+</div>
+<!-- /SignIn Modal --></div><span id="native-ready"></span></section></main><footer>Kit-Build System v2 — aryoxp / <a href="LICENSES.md">原版・ライブラリの権利表記</a></footer><script src="upstream/core/asset/vendor/jquery-3.6.0.min.js"></script><script src="upstream/.asset/vendor/bootstrap/js/bootstrap.bundle.min.js"></script><script src="upstream/core/asset/vendor/pako/pako.min.js"></script><script src="upstream/core/asset/js/core-clients.js"></script><script src="upstream/core/asset/js/core-language.js"></script><script src="upstream/core/asset/js/core-runtime.js"></script><script src="upstream/.asset/vendor/cytoscapejs/cytoscape.min.js"></script><script src="upstream/.asset/vendor/cytoscapejs/layout-base.js"></script><script src="upstream/.asset/vendor/cytoscapejs/cose-base.js"></script><script src="upstream/.asset/vendor/cytoscapejs/cytoscape-fcose.js"></script><script src="upstream/.asset/vendor/huebee/huebee.pkgd.min.js"></script><script src="upstream/.asset/vendor/anime.min.js"></script><script src="upstream/.asset/vendor/general-ui/g.ui.js"></script><script src="upstream/.asset/vendor/kitbuild/kbui.js"></script><script src="upstream/.asset/vendor/kitbuild/kbui.canvas.style.js"></script><script src="upstream/.asset/vendor/kitbuild/kbui.canvas.tool.js"></script><script src="upstream/.asset/vendor/kitbuild/kbui.toolbar.js"></script><script src="upstream/.asset/vendor/kitbuild/kitbuild.js"></script><script src="upstream/.asset/vendor/kitbuild/analyzer.js"></script><script src="upstream/.asset/vendor/kitbuild/logger.js"></script><script src="upstream/.asset/vendor/showdown.min.js"></script><script src="upstream/.asset/vendor/highlight/highlight.min.js"></script><script src="upstream/.asset/vendor/sortable.min.js"></script><script src="upstream/.asset/vendor/sortable.jq.min.js"></script><script src="upstream/.asset/vendor/xlsx.mini.min.js"></script><script src="upstream/.asset/vendor/simplemde/simplemde.min.js"></script><script src="assets/purify.min.js"></script><script>const KB_CONFIG={"endpoint":"https://script.google.com/macros/s/AKfycbxnYz9Byxt2rHWq3-bl8ltZ5SxnWw9UQxYhlBXPeMQbQ-DoLd-WjjL1A4KaC-xskPSICg/exec","clientId":"805161288771-qntebds8se591ub336uuceoue1leo1p6.apps.googleusercontent.com","appVersion":"1.0.0"};const KB_PAGE={"name":"review","teacher":false,"ready":true};const KB_LANGUAGE={"cancel":"キャンセル","close":"閉じる","copy":"コピー","disabled":"無効","download":"ダウンロード","enabled":"有効","end":"終了","error":"エラー","finish":"終了","hello":"こんにちは","load":"ロード","loading":"読み込み中...","new":"新しい","no":"いいえ","off":"オフ","ok":"了解","on":"オン","open":"開いた","paste":"ペースト","redo":"やり直す","reset":"リセット","save":"セーブ","save-as":"新規保管","set":"セットする","start":"開始","stop":"停止","toggle":"トグル","undo":"元に戻す","unset":"未設定","upload":"アップロード","yes":"はい","zoom":"ズーム"};function mountGoogle(callback) {
+  if (!KB_CONFIG.clientId) { document.getElementById('auth-message').textContent = '管理者が OAuth クライアントIDを設定してから利用できます。'; return; }
+  var s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+  s.onload = function () { google.accounts.id.initialize({client_id:KB_CONFIG.clientId, callback:r => callback(r.credential)}); google.accounts.id.renderButton(document.getElementById('google-button'), {theme:'outline',size:'large',width:280}); };
+  s.onerror = function () { document.getElementById('auth-message').textContent = 'Googleログインを読み込めません。通信を確認して再読み込みしてください。'; };
+  document.head.appendChild(s);
+}
+</script><script id="native-app-source" type="text/plain">$(() => { // jQuery onReady callback
+  let app = ReviewApp.instance()
+})
+
+// short hand for logger class
+// so to log something, one could simply use:
+// Log.l('action', data);
+class L {
+  static log() {}
+}
+
+class ReviewApp {
+  constructor() {
+    this.kbui = KitBuildUI.instance(ReviewApp.canvasId)
+    let canvas = this.kbui.canvases.get(ReviewApp.canvasId)
+    // canvas.addToolbarTool(KitBuildToolbar.UNDO_REDO, { priority: 3 })
+    canvas.addToolbarTool(KitBuildToolbar.CAMERA, { priority: 4 })
+    canvas.addToolbarTool(KitBuildToolbar.UTILITY, { priority: 5, trash: false })
+    canvas.addToolbarTool(KitBuildToolbar.LAYOUT, { stack: 'right' })
+    canvas.addToolbarTool(KitBuildToolbar.COMPARE, { stack: 'left' })
+    canvas.toolbar.render()
+    canvas.canvasTool.enableConnector(false)
+    canvas.canvasTool.enableIndicator(false)
+    canvas.addCanvasTool(KitBuildCanvasTool.CENTROID)
+
+    this.session = Core.instance().session();
+    this.ajax = Core.instance().ajax();
+    this.canvas = canvas;
+
+    // Logger
+    if (typeof KitBuildLogger != "undefined") {
+      let sessid = Core.instance().config().get("sessid");
+      let seq = Core.instance().config().get("seq");
+      this.logger = KitBuildLogger.instance(
+        null,
+        seq ?? 0,
+        sessid,
+        canvas,
+        null
+      ).enable();
+
+      // bind logger, but don't listen to canvas events.
+      // ReviewApp.loggerListener = this.logger.onCanvasEvent.bind(this.logger);
+      // canvas.on("event", ReviewApp.loggerListener);
+      L.log = this.logger.log.bind(this.logger);
+      L.log(`init-${this.constructor.name}`);
+    }
+
+    // Hack for sidebar-panel show/hide
+    // To auto-resize the canvas.
+    // let observer = new MutationObserver((mutations) => $(`#${ReviewApp.canvasId} > div`).css('width', 0))
+    // observer.observe(document.querySelector('#admin-sidebar-panel'), {attributes: true})
+    // Enable tooltip
+    $('[data-bs-toggle="tooltip"]').tooltip({ html: true });
+    this.handleEvent();
+    this.handleRefresh();
+  }
+
+  static instance() {
+    ReviewApp.inst = new ReviewApp()
+  }
+
+  setConceptMap(conceptMap) { console.warn("CONCEPT MAP SET:", conceptMap)
+    this.conceptMap = conceptMap
+    if (conceptMap) {
+      this.session.set('cmid', conceptMap.map.cmid)
+      let status = `<span class="mx-2 d-flex align-items-center status-cmap">`
+        + `<span class="badge rounded-pill bg-secondary">ID: ${conceptMap.map.cmid}</span>`
+        + `<span class="text-secondary ms-2 text-truncate"><small>${conceptMap.map.title}</small></span>`
+        + `</span>`
+      StatusBar.instance().remove('.status-cmap').prepend(status);
+    } else {
+      StatusBar.instance().remove('.status-cmap');
+      this.session.unset('cmid')
+    }
+    $('[data-bs-toggle="tooltip"]').tooltip({ html: true })
+  }
+
+  setKitMap(kitMap) { console.warn("KIT MAP SET:", kitMap)
+    this.kitMap = kitMap
+    if (kitMap) {
+      this.setConceptMap(kitMap.conceptMap)
+      this.session.set('kid', kitMap.map.kid)
+      let tooltipText = ''
+      tooltipText += "FBLV:" + kitMap.parsedOptions.feedbacklevel
+      tooltipText += ",FBSV:" + kitMap.parsedOptions.feedbacksave
+      tooltipText += ",FFB:" + kitMap.parsedOptions.fullfeedback
+      tooltipText += ",LOG:" + kitMap.parsedOptions.log
+      tooltipText += ",MOD:" + kitMap.parsedOptions.modification
+      tooltipText += ",RD:" + kitMap.parsedOptions.readcontent
+      tooltipText += ",RST:" + kitMap.parsedOptions.reset
+      tooltipText += ",SVLD:" + kitMap.parsedOptions.saveload
+      let status = `<span class="mx-2 d-flex align-items-center status-kit">`
+        + `<span class="badge rounded-pill bg-primary" role="button" data-bs-toggle="tooltip" data-bs-placement="top" title="${tooltipText}">ID: ${kitMap.map.kid}</span>`
+        + `<span class="text-secondary ms-2 text-truncate"><small>${kitMap.map.name}</small></span>`
+        + `</span>`
+      KitBuild.getTextOfKit(kitMap.map.kid).then((text) => {
+        this.text = text;
+        let textLabel = text ? `Text: ${text.title}` : "Text: None";
+        let statusText = `<span class="mx-2 d-flex align-items-center status-text">`;
+        statusText += `<span class="badge rounded-pill bg-danger">${textLabel}</span>`;
+        statusText += `</span>`;
+        StatusBar.instance().remove(".status-text").append(statusText);
+      });
+      StatusBar.instance().remove('.status-kit').append(status);
+    } else {
+      StatusBar.instance().remove('.status-kit');
+      this.session.unset('kid')
+    }
+    $('[data-bs-toggle="tooltip"]').tooltip({ html: true })
+  }
+
+  setLearnerMap(learnerMap) { console.warn("LEARNER MAP SET:", learnerMap) 
+    this.learnerMap = learnerMap
+    if (learnerMap) {
+      this.session.set('lmid', learnerMap.map.lmid)
+      let status = `<span class="mx-2 d-flex align-items-center status-learnermap">`
+        + `<span class="badge rounded-pill bg-warning text-dark">ID: ${learnerMap.map.lmid}</span>`
+        + `</span>`
+      StatusBar.instance().remove('.status-learnermap').append(status);
+    } else {
+      StatusBar.instance().remove('.status-learnermap');
+      this.session.unset('lmid')
+    }
+  }
+
+  handleEvent() {
+
+    // let saveAsDialog = UI.modal('#kit-save-as-dialog', {
+    //   onShow: () => { 
+    //     if (saveAsDialog.kitMap) { // means save existing kit...
+    //       $('#kit-save-as-dialog .input-title').val(saveAsDialog.kitMap.map.name)
+    //       $('#kit-save-as-dialog .input-title').focus().select()
+    //       $('#input-fid').val(saveAsDialog.kitMap.map.kfid)
+    //       $('#input-title').val(saveAsDialog.kitMap.map.name)
+    //       $(`#input-layout-${saveAsDialog.kitMap.map.layout}`).prop('checked', true)
+    //       $('#input-enabled').prop('checked', saveAsDialog.kitMap.map.enabled == "1" ? true : false)
+    //     } else {
+    //       $('#kit-save-as-dialog .input-title').val('Kit of ' + ReviewApp.inst.conceptMap.map.title)
+    //       $('#kit-save-as-dialog .input-title').focus().select()
+    //       $('#kit-save-as-dialog .bt-generate-fid').trigger('click')
+    //       $('#input-layout-preset').prop('checked', true)
+    //       $('#input-enabled').prop('checked', true)
+    //     }
+    //   },
+    //   hideElement: '.bt-cancel'
+    // })
+    // saveAsDialog.setKitMap = (kitMap) => { console.log(kitMap)
+    //   if (kitMap) saveAsDialog.kitMap = kitMap
+    //   else saveAsDialog.kitMap = null
+    //   return saveAsDialog;
+    // }
+    // saveAsDialog.setTitle = (title) => {
+    //   $('#kit-save-as-dialog .dialog-title').html(title)
+    //   return saveAsDialog
+    // }
+    // saveAsDialog.setIcon = (icon) => {
+    //   $('#kit-save-as-dialog .dialog-icon').removeClass()
+    //     .addClass(`dialog-icon bi bi-${icon} me-2`)
+    //   return saveAsDialog
+    // }
+  
+    // let openDialog = UI.modal('#concept-map-open-dialog', {
+    //   hideElement: '.bt-cancel',
+    //   width: '700px',
+    // })
+  
+    let contentDialog = UI.modal('#kit-content-dialog', {
+      hideElement: '.bt-close',
+      backdrop: false,
+      get height() { return $('body').height() * .7 | 0 },
+      get offset() { return { left: ($('body').width() * .1 | 0) } },
+      draggable: true,
+      dragHandle: '.drag-handle',
+      resizable: true,
+      resizeHandle: '.resize-handle',
+      minWidth: 375,
+      minHeight: 200,
+      onShow: () => {
+        let sdown = new showdown.Converter({
+          strikethrough: true,
+          tables: true,
+          simplifiedAutoLink: true,
+        });
+        sdown.setFlavor("github");
+        console.log(contentDialog.text);
+        let htmlText = contentDialog.text
+          ? sdown.makeHtml(contentDialog.text.content)
+          : "<em>Content text unavailable.</em>";
+        $("#kit-content-dialog .content").html(htmlText);
+        hljs.highlightAll();
+      }
+    })
+    contentDialog.setContent = (text, type = 'plain') => {
+      contentDialog.text = text
+      return contentDialog
+    }
+  
+    let feedbackDialog = UI.modal('#feedback-dialog', {
+      hideElement: '.bt-close',
+      backdrop: false,
+      draggable: true,
+      dragHandle: '.drag-handle',
+      width: 375,
+      onShow: () => {
+        $('#feedback-dialog').off('click').on('click', '.bt-modify', (e) => {
+          $('.app-navbar .bt-mymap').trigger('click')
+          feedbackDialog.hide()
+        })
+      }
+    })
+    feedbackDialog.setCompare = (compare, level = Analyzer.MATCH | Analyzer.EXCESS) => {
+      feedbackDialog.compare = compare
+      console.log(compare)
+      let content = ''
+      if (compare.match.length && (level & Analyzer.MATCH)) {
+        content += `<div class="d-flex align-items-center"><i class="bi bi-check-circle-fill text-success fs-1 mx-3"></i> `
+        content += `<span>You have <strong class="text-success fs-bold">${compare.match.length} matching</strong> propositions.</span></div>`
+      }
+      if (compare.excess.length && (level & Analyzer.EXCESS)) {
+        content += `<div class="d-flex align-items-center"><i class="bi bi-exclamation-triangle-fill text-primary fs-1 mx-3"></i> `
+        content += `<span>You have <strong class="text-primary fs-bold">${compare.excess.length} excessive</strong> propositions.</span></div>`
+      }
+      if (compare.miss.length && level != Analyzer.NONE) {
+        content += `<div class="d-flex align-items-center"><i class="bi bi-exclamation-triangle-fill text-danger fs-1 mx-3"></i> `
+        content += `<span>You have <strong class="text-danger fs-bold">${compare.miss.length} missing</strong> propositions.</span></div>`
+      }
+  
+      if (compare.excess.length == 0 && compare.miss.length == 0) {
+        content = `<div class="d-flex align-items-center"><i class="bi bi-check-circle-fill text-success fs-1 mx-3"></i> `
+        content += `<span><span class="text-success">Great!</span><br>All the propositions are <strong class="text-success fs-bold">matching</strong>.</span></div>`
+      }
+  
+      $('#feedback-dialog .feedback-content').html(content)
+      return feedbackDialog
+    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /** 
+     * Back to Kit-Building
+     * */
+  
+    $('.app-navbar').on('click', '.bt-modify', () => { // console.log(ReviewApp.inst)
+      let modification = this.kitMap.parsedOptions.modification;
+      if (!modification) {
+        UI.dialog('Map recomposition with this kit cannot be modified further.').show();
+        return;
+      }
+      let confirm = UI.confirm('Go back and modify the map?').positive(() => {
+        L.log('review-begin-modify-map');
+        this.session.unset('flmid').then(() => {
+          let url = Core.instance().config().get('baseurl')
+          if (this.logger && this.logger.seq) {
+            let seq = this.logger.seq;
+            if (seq) url += `home/index/${seq}`;
+          }
+          window.location.href = "index.html";
+          confirm.hide()
+        })
+      }).show()
+      // console.log(Core.instance().config().get('baseurl'))
+    })
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /** 
+     * Content
+     * */
+  
+    $('.app-navbar').on('click', '.bt-content', () => { // console.log(ReviewApp.inst)
+      if (!this.kitMap || !this.learnerMap) {
+        UI.error('Invalid kit or learner map').show();
+        return
+      }
+      
+      let readcontent = this.kitMap.parsedOptions.readcontent;
+      if (!readcontent) {
+        UI.dialog('Content text of this kit is not enabled.').show();
+        return;
+      }
+      contentDialog.setContent(this.text).show();
+      L.log('review-content-shown', {
+        kid: this.learnerMap.map.kid,
+        lmid: this.learnerMap.map.lmid,
+      });
+      
+    })
+  
+    $('#kit-content-dialog .bt-scroll-top').on('click', (e) => {
+      $('#kit-content-dialog .content').parent().animate({scrollTop: 0}, 200)
+    })
+  
+    $('#kit-content-dialog .bt-scroll-more').on('click', (e) => {
+      let height = $('#kit-content-dialog .content').parent().height()
+      let scrollTop = $('#kit-content-dialog .content').parent().scrollTop()
+      $('#kit-content-dialog .content').parent().animate({scrollTop: scrollTop + height - 16}, 200)
+    })
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /**
+     * 
+     * Feedback
+     */
+    $('.app-navbar').on('click', '.bt-comparison', (e) => {
+  
+      if (!this.kitMap) return
+      if (feedbackDialog.learnerMapEdgesData) 
+        $('.app-navbar .bt-mymap').trigger('click')
+  
+      let learnerMapData = KitBuildUI.buildConceptMapData(this.canvas)
+      feedbackDialog.learnerMapEdgesData = this.canvas.cy.edges().jsons()
+  
+      let fullfeedback = this.kitMap.parsedOptions.fullfeedback;
+      console.log(fullfeedback, this.kitMap.parsedOptions);
+      
+      if (fullfeedback) {
+
+        // Analyze learner map 
+        learnerMapData.conceptMap = this.conceptMap;
+        Analyzer.composePropositions(learnerMapData);
+        let direction = learnerMapData.conceptMap.map.direction;
+        let compare = Analyzer.compare(learnerMapData, direction);
+
+        // Provide level 4 analysis
+        let level = Analyzer.MATCH | Analyzer.EXCESS | Analyzer.MISS;
+
+        // Display the comparison map
+        Analyzer.showCompareMap(compare, this.canvas.cy, direction, level);
+
+        // Display comparison dialog
+        feedbackDialog.setCompare(compare, level).show();
+
+        // Disable unnecessary canvas tool
+        this.canvas.canvasTool.enableIndicator(false).enableConnector(false)
+          .clearCanvas().clearIndicatorCanvas();
+        // feedbackDialog.setCompare(compare, level).show()
+        
+        // Apply edge visibility settings
+        let compareTool = this.canvas.toolbar.tools.get(KitBuildToolbar.COMPARE);
+        if (compareTool) compareTool.apply();
+        L.log('review-compare');
+      } else {
+        UI.dialog('Sorry, full comparison map feature for this kit is <span class="text-danger">not enabled</span> in kit options.').show();
+        // L.log('review-compare');
+      }
+  
+  
+      
+    })
+    $('.app-navbar').on('click', '.bt-mymap', () => {
+      if (!feedbackDialog.learnerMapEdgesData) return;
+      L.log('review-show-my-map');
+      this.canvas.cy.edges().remove()
+      this.canvas.cy.add(feedbackDialog.learnerMapEdgesData)
+      this.canvas.applyElementStyle()
+      this.canvas.canvasTool.clearCanvas().clearIndicatorCanvas()
+      feedbackDialog.learnerMapEdgesData = null
+    })
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    /** 
+     * 
+     * Submit
+    */
+    $('.app-navbar').on('click', '.bt-finish', () => {
+      if (!this.learnerMap) {
+        UI.dialog('Invalid learner map').show();
+        return;
+      }
+      let confirm = UI.confirm("Finish reviwing your concept map?<br/>This will end all the concept mapping session. and you will need to sign in again for another concept mapping session.", {
+          iconStyle: 'danger', icon: 'exclamation-triangle-fill'
+        }).positive(() => {
+          L.log('review-finish', {
+            kid: this.learnerMap.map.kid,
+            lmid: this.learnerMap.map.lmid,
+          })
+          this.session.destroy();
+          UI.success('Logging out...').show();
+          setTimeout(() => {
+            let url = Core.instance().config('baseurl');
+            window.location.replace(url);
+          }, 2000);
+          // TODO: Destroy concept map session data, go back to blank Kit-Building activity
+          confirm.hide()
+        }).show()
+    })
+  
+  }
+  
+  /**
+   * 
+   * Handle refresh web browser
+   */
+  
+  handleRefresh() {
+    this.session.getAll().then(sessions => { console.log(sessions)
+      let kid  = sessions.kid
+      let lmid = sessions.flmid // fixed
+      let username = sessions.user.username;
+
+      if (!lmid) {
+        UI.dialog('Invalid concept map.', {icon: 'exclamation-triangle-fill', iconStyle: 'danger'}).show();
+        return;
+      }
+
+      this.logger.setUsername(username);
+
+      let promises = []
+      if (kid) promises.push(KitBuild.openKitMap(kid))
+  
+      // should open only learnermap which has fixed state
+      if (lmid) promises.push(KitBuild.openLearnerMap(lmid))
+      Promise.all(promises).then(maps => { // console.log(maps)
+        let kitMap = maps[0]
+        let learnerMap = maps[1]
+        ReviewApp.parseKitMapOptions(kitMap);
+        if (kitMap && !learnerMap) {
+          ReviewApp.resetMapToKit(kitMap, this.canvas)
+          return
+        } 
+        if (learnerMap) {
+          learnerMap.kitMap = kitMap
+          learnerMap.conceptMap = kitMap.conceptMap
+          this.canvas.cy.elements().remove()
+          this.canvas.cy.add(KitBuildUI.composeLearnerMap(learnerMap))
+          this.canvas.applyElementStyle()
+          this.canvas.toolbar.tools.get(KitBuildToolbar.CAMERA).fit(null, {duration: 0})
+          this.setKitMap(kitMap)
+          this.setLearnerMap(learnerMap)
+
+          // Apply kitMap options;
+          // console.log(this.kitMap.parsedOptions);
+          let fullfeedback = this.kitMap.parsedOptions.fullfeedback;
+          let modification = this.kitMap.parsedOptions.modification;
+          let readcontent = this.kitMap.parsedOptions.readcontent;
+          $('.bt-comparison').attr('disabled', !fullfeedback);
+          $('.bt-modify').attr('disabled', !modification);
+          $('.bt-content').attr('disabled', !readcontent);
+        }
+        else UI.warning('Unable to display kit.').show()
+      })
+    })
+  }
+}
+
+ReviewApp.canvasId = "review-canvas"
+
+/** 
+ * 
+ * Helpers
+*/
+
+ReviewApp.parseKitMapOptions = (kitMap) => {
+  kitMap.parsedOptions = ReviewApp.parseOptions(kitMap.map.options, {
+    feedbacklevel: 2,
+    fullfeedback: 1,
+    modification: 1,
+    readcontent: 1,
+    saveload: 1,
+    reset: 1,
+    feedbacksave: 1,
+    log: 0
+  })
+}
+
+ReviewApp.resetMapToKit = (kitMap, canvas) => {
+  // will also set and cache the concept map
+  ReviewApp.inst.setKitMap(kitMap)
+  canvas.cy.elements().remove()
+  canvas.cy.add(KitBuildUI.composeKitMap(kitMap))
+  canvas.applyElementStyle()
+  if (kitMap.map.layout == "random") {
+    canvas.cy.elements().layout({name: 'fcose', animationDuration: 0, fit: false, stop: () => {
+      canvas.toolbar.tools.get(KitBuildToolbar.CAMERA).center(null, {duration: 0})
+    }}).run()
+  } else canvas.toolbar.tools.get(KitBuildToolbar.CAMERA).fit(null, {duration: 0})
+  
+  // TODO: apply kit options to UI
+  // console.log(kitMap)
+
+  let feedbacklevelFeature = '<button class="bt-feedback btn btn-warning"><i class="bi bi-eye-fill"></i> Feedback</button>'
+  feedbacklevelFeature += '<button class="bt-mymap btn btn-warning"><i class="bi bi-eye-slash-fill"></i> Clear Feedback</button>'
+  let saveloadFeature = '<button class="bt-save btn btn-secondary"><i class="bi bi-download"></i> Save</button>'
+  saveloadFeature += '<button class="bt-load btn btn-secondary"><i class="bi bi-upload"></i> Load</button>'
+  let readcontentFeature = '<button class="bt-content btn btn-sm btn-secondary"><i class="bi bi-file-text-fill"></i> Contents</button>'
+  let resetFeature = '<button class="bt-reset btn btn-danger"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>'
+
+  if (kitMap.parsedOptions.feedbacklevel) $('#recompose-feedbacklevel').html(feedbacklevelFeature).removeClass('d-none')
+  else $('#recompose-feedbacklevel').html('').addClass('d-none')
+  if (kitMap.parsedOptions.saveload) $('#recompose-saveload').html(saveloadFeature).removeClass('d-none')
+  else $('#recompose-saveload').html('').addClass('d-none')
+  if (kitMap.parsedOptions.reset) $('#recompose-reset').html(resetFeature).removeClass('d-none')
+  else $('#recompose-reset').html('').addClass('d-none')
+  if (kitMap.parsedOptions.readcontent) $('#recompose-readcontent').html(readcontentFeature).removeClass('d-none')
+  else $('#recompose-readcontent').html('').addClass('d-none')
+  return
+}
+
+ReviewApp.parseOptions = (optionJsonString, defaultValueIfNull) => {
+  if (optionJsonString === null) return defaultValueIfNull
+  let option, defopt = defaultValueIfNull
+  try {
+    option = Object.assign({}, defopt, JSON.parse(optionJsonString))
+    option.feedbacklevel = option.feedbacklevel ? parseInt(option.feedbacklevel) : defopt.feedbacklevel
+  } catch (error) { UI.error(error).show() }
+  return option
+}
+window.KBNativeClass=ReviewApp;window.KBNativeLogBridge=typeof L!=="undefined"?L:null;</script><script>/* 変更点はここに隔離。web/upstream のアプリ・キャンバス・logger は変更しない。 */
+const nativeDOM=id=>document.getElementById(id);
+// 元アプリのHTML組立て箇所を一箇所で保護する。採点用ラベル文字列は変更しない。
+for(const method of ['html','append','prepend','before','after']){const original=$.fn[method];$.fn[method]=function(...args){return original.apply(this,args.map(value=>typeof value==='string'?DOMPurify.sanitize(value):value));};}
+const OriginalSimpleMDE=SimpleMDE;window.SimpleMDE=class extends OriginalSimpleMDE{constructor(options){super(Object.assign({},options,{autoDownloadFontAwesome:false,spellChecker:false}));}};
+function nativeStatus(message){nativeDOM('status').textContent=String(message);}
+function nativeStateKey(name){return 'kb.state.'+client.user.user_id+'.'+name;}
+let nativeUnloading=false;const nativeRequests=new Set();
+window.addEventListener('pagehide',()=>{nativeUnloading=true;for(const request of nativeRequests)request.abort();});
+window.addEventListener('pageshow',event=>{nativeUnloading=false;if(event.persisted){client.flushing=null;client.flush();}});
+const nativeAPI={async post(body){
+  if(!KB_CONFIG.endpoint)throw new Error('web/config.json にGASのURLを設定してください');
+  const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),25000);nativeRequests.add(abort);
+  try{const response=await fetch(KB_CONFIG.endpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),credentials:'omit',signal:abort.signal});if(!response.ok)throw new Error('HTTP '+response.status);const r=await response.json();if(!r.ok){const error=new Error(r.error);error.code=r.code;throw error;}return r;}
+  catch(error){if(nativeUnloading)return new Promise(()=>{});throw error;}
+  finally{clearTimeout(timer);nativeRequests.delete(abort);}
+}};
+const client={page:crypto.randomUUID(),seq:0,user:null,session:null,flushing:null,paused:false,retry:1000,
+  async login(token){await this.accept(await nativeAPI.post({action:'login',idToken:token}),true);},
+  async accept(r,signIn=false){if(this.user&&this.user.user_id!==r.user_id)throw new Error('同じアカウントで再ログインしてください');if(KB_PAGE.teacher&&!r.teacher)throw new Error('教員専用です');const first=!this.user;this.user=r;this.session=r.session;this.paused=false;localStorage.setItem('kb.native.auth',JSON.stringify({session:r.session}));nativeDOM('auth').hidden=true;nativeDOM('workspace').hidden=false;nativeDOM('account').textContent=r.user_id;nativeDOM('logout').hidden=false;if(signIn)this.event({action:'sign-in-success',data:JSON.stringify({provider:'google'}),ua:navigator.userAgent});if(first)await nativeStart();await this.flush();},
+  async call(action,data){try{return await nativeAPI.post(Object.assign({},data,{action,session:this.session}));}catch(e){if(e.code==='auth'){this.paused=true;nativeDOM('auth').hidden=false;nativeDOM('auth-message').textContent=e.message;}throw e;}},
+  prefix(){return 'kb.native.event.'+this.user.user_id+'.';},
+  event(raw){if(!this.user)return;const seq=this.seq+1,e={native:raw,action:raw.action,page_session:this.page,seq,event_id:this.page+'-'+seq,client_ts:Date.now(),app_version:KB_CONFIG.appVersion};localStorage.setItem(this.prefix()+e.event_id,JSON.stringify(e));this.seq=seq;this.update();return e;},
+  queued(){const p=this.prefix(),out=[];for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key.startsWith(p))out.push({key,event:JSON.parse(localStorage.getItem(key))});}return out.sort((a,b)=>a.event.page_session.localeCompare(b.event.page_session)||a.event.seq-b.event.seq);},
+  async flush(){if(!this.user||this.paused||!navigator.onLine)return false;if(this.flushing)return this.flushing;this.flushing=(async()=>{await Promise.resolve();try{for(;;){const queue=this.queued();if(!queue.length){this.retry=1000;this.update();return true;}let size=0;const batch=[];for(const item of queue){const n=new TextEncoder().encode(JSON.stringify(item.event)).length;if(item.event.page_session!==queue[0].event.page_session||batch.length>=this.user.maxBatch||size+n>170000)break;size+=n;batch.push(item);}if(!batch.length)throw new Error('操作ログが送信上限を超えています');const ack=await this.call('log',{events:batch.map(x=>x.event)});for(const x of batch)if(x.event.seq<=ack.ack)localStorage.removeItem(x.key);this.update();}}catch(e){nativeStatus('送信待ち: '+e.message);if(e.code!=='auth'){clearTimeout(this.retryTimer);this.retryTimer=setTimeout(()=>this.flush(),this.retry);this.retry=Math.min(60000,this.retry*2);}return false;}finally{this.flushing=null;}})();return this.flushing;},
+  update(){nativeStatus(this.queued().length?'ログ送信待ち '+this.queued().length+' 件':'ログ送信済み');},
+  async init(){mountGoogle(token=>this.login(token).catch(e=>{nativeDOM('auth-message').textContent=e.message;}));const prior=localStorage.getItem('kb.native.auth');if(prior)try{await this.accept(await nativeAPI.post({action:'resume',session:JSON.parse(prior).session}));}catch(e){nativeDOM('auth-message').textContent=e.message;}setInterval(()=>this.flush(),5000);},
+  async logout(){this.event({action:'sign-out',data:'{}',ua:navigator.userAgent});await this.flush();localStorage.removeItem('kb.native.auth');location.reload();}
+};
+const nativeRevisions=new Map();
+// Core.compress の apply 引数数制限を避け、分析用の多数マップを同じgzip/base64形式へ戻す。
+function nativeCompressMaps(maps){const bytes=pako.gzip(JSON.stringify(maps)),parts=[];for(let i=0;i<bytes.length;i+=8192)parts.push(String.fromCharCode(...bytes.subarray(i,i+8192)));return btoa(parts.join(''));}
+let nativeSession={};
+function nativeSessionLoad(){try{nativeSession=JSON.parse(sessionStorage.getItem('kb.native.session.'+client.user.user_id)||'{}');}catch(_){nativeSession={};}nativeSession.user={username:client.user.user_id,name:client.user.user_id,gids:client.user.group||'ALL',rid:client.user.teacher?'TEACHER':'STUDENT'};const params=new URLSearchParams(location.search);if(params.has('kid')&&params.get('kid')!==nativeSession.kid){delete nativeSession.lmid;delete nativeSession.flmid;}for(const [k,v] of params)if(['cmid','kid','lmid','flmid','tid'].includes(k))nativeSession[k]=v;}
+function nativeSessionSave(){sessionStorage.setItem('kb.native.session.'+client.user.user_id,JSON.stringify(nativeSession));}
+Ajax.prototype.send=function(method,url,data,options){
+  const route=String(url).replace(Core.instance().config('baseurl'),'').replace(/^\//,''),parts=route.split('/'),api=parts[0].toLowerCase(),operation=(parts[1]||'').toLowerCase();let d=data instanceof FormData?Object.fromEntries(data):data||{};
+  if(api==='coresession'){
+    if(operation==='set'){if('key' in d)nativeSession[d.key]=d.data;else Object.assign(nativeSession,d);nativeSessionSave();return Promise.resolve(true);}
+    if(operation==='unset'){delete nativeSession[d.key];nativeSessionSave();return Promise.resolve(true);}
+    if(operation==='destroy'){nativeSession={user:nativeSession.user};nativeSessionSave();return Promise.resolve(true);}
+    return Promise.resolve(d.key?nativeSession[d.key]:Object.assign({},nativeSession));
+  }
+  if(api==='coreruntime')return Promise.resolve({'sign-in-group':client.user.group||'ALL'});
+  if(api==='corelanguage')return Promise.resolve(KB_LANGUAGE);
+  const decoded=d.data&&typeof d.data==='string'?Core.decompress(d.data):d;
+  const kind=/sets$/.test(operation)?'sets':/conceptmap/.test(operation)?'cmap':/kit/.test(operation)?'kit':/learner/.test(operation)?'lmap':/topic/.test(operation)?'topic':/group/.test(operation)?'group':/text/.test(operation)?'text':null;
+  const id=kind==='lmap'?decoded.lmid:kind==='kit'||kind==='sets'?decoded.kid:kind==='cmap'?decoded.cmid:decoded.tid||decoded.gid||d.kid||parts[2];
+  const body={route,data:d,request_id:crypto.randomUUID(),revision:nativeRevisions.get(kind+':'+id)||0};
+  return client.call('native.api',body).then(async r=>{if(Object.hasOwn(r,'native_next')&&r.native_next!==null){const maps=Core.decompress(r.coreResult);let next=r.native_next;while(next!==null){nativeStatus('分析用マップを取得中 '+maps.length+' 件');const chunk=await client.call('native.api',{...body,data:{...d,native_offset:next}});maps.push(...Core.decompress(chunk.coreResult));next=chunk.native_next;}r.coreResult=nativeCompressMaps(maps);}this.response=r;const v=r.coreResult;if(v&&v._revision&&kind){const key=v.map?(v.map.cmid&&kind==='cmap'?v.map.cmid:kind==='kit'?v.map.kid:v.map.lmid):v.tid||v.gid||id;nativeRevisions.set(kind+':'+key,v._revision);}return v;});
+};
+// 共同編集コード・socket.ioを読み込まない。原アプリの静的参照だけを閉じる。
+const KitBuildCollab={enableControl(){},room(){return null;}};
+Logger.shouldSkip=()=>false;
+// 原版は mixed の既存リンク→追加概念を lConcepts で見つけられない。
+// 入力の概念辞書だけ補完し、保存構造・比較規則・原版ソースは変えない。
+const nativeOriginalCompose=Analyzer.composePropositions;
+Analyzer.composePropositions=function(map){const concepts=map?.concepts;if(map?.conceptMap&&map.concepts_ext?.length)map.concepts=concepts.concat(map.concepts_ext.filter(c=>!concepts.some(v=>v.cid===c.cid)));try{return nativeOriginalCompose.call(this,map);}finally{if(map&&concepts)map.concepts=concepts;}};
+const originalBeacon=navigator.sendBeacon.bind(navigator);
+navigator.sendBeacon=(url,data)=>{if(String(url).endsWith('logApi/log')){const raw=Object.fromEntries(data.entries());raw.username=client.user.user_id;client.event(raw);return true;}return originalBeacon(url,data);};
+function nativeCatch(promise){return Promise.resolve(promise).catch(e=>nativeStatus(e.message));}
+async function nativeStart(){
+  if(!client.user.teacher)document.querySelectorAll('header nav a').forEach(a=>{if(!['index.html','mixed.html','extended.html'].includes(a.getAttribute('href')))a.hidden=true;});
+  nativeSessionLoad();Core.instance().config().set('sessid',client.page);Core.instance().config().set('seq',0);Language.instance().lang=KB_LANGUAGE;
+  const script=document.createElement('script');script.textContent=nativeDOM('native-app-source').textContent;document.body.append(script);
+  const App=window.KBNativeClass;
+  const instantiate=App.instance;App.instance=function(...args){const result=instantiate.apply(this,args);if(result)App.inst=result;return result;};
+  if(App.prototype.initCollab)App.prototype.initCollab=function(){};
+  if(App.onCanvasEvent)App.onCanvasEvent=function(){};
+  if(App.prototype.setConceptMap){const original=App.prototype.setConceptMap;App.prototype.setConceptMap=function(map){const r=original.call(this,map);if(this.logger?.setConceptMap)this.logger.setConceptMap(map);if(this.logger?.setConceptMapId)this.logger.setConceptMapId(map?.map.cmid);return r;};}
+  if(!KB_PAGE.ready)$(function(){App.inst=App.instance();});
+  await new Promise(resolve=>$(resolve));await new Promise(resolve=>setTimeout(resolve,50));
+  window.nativeApp=App.inst;window.nativeCanvas=nativeApp.canvas||nativeApp.kbui?.canvases.values().next().value;
+  if(nativeCanvas)new ResizeObserver(()=>requestAnimationFrame(()=>{nativeCanvas.cy.resize();nativeCanvas.canvasTool.resizeCanvas();})).observe(nativeCanvas.cy.container());
+  if(nativeCanvas){let frame;document.addEventListener('scroll',()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>nativeCanvas.cy.resize());},{capture:true,passive:true});}
+  // 原版は画面全体を固定配置するため、ヘッダー折返しによる位置変化を検知しない。
+  // 入力より前に座標だけを更新し、選択中のハンドルを維持する。
+  for(const value of Object.values(nativeApp)){if(!value?.canvases)continue;for(const canvas of value.canvases.values())for(const type of ['pointerdown','mousedown','touchstart'])canvas.cy.container().addEventListener(type,()=>canvas.cy.renderer().invalidateContainerClientCoordsCache(),{capture:true,passive:true});}
+  // makekit/admin画面も同じLoggerを使う。元にLoggerのある画面には二重に登録しない。
+  if(nativeCanvas&&!nativeApp.logger){nativeApp.logger=(KB_PAGE.teacher?CmapLogger.instance(client.user.user_id,0,client.page,nativeCanvas):KitBuildLogger.instance(client.user.user_id,0,client.page,nativeCanvas,nativeApp.conceptMap)).enable();nativeCanvas.on('event',nativeApp.logger.onCanvasEvent.bind(nativeApp.logger));if(window.KBNativeLogBridge)KBNativeLogBridge.log=nativeApp.logger.log.bind(nativeApp.logger);}
+  $('.cgpass,.bt-profile,.bt-sign-in,.bt-logout,.bt-collab,.bt-share').hide();
+  document.querySelectorAll('button').forEach(b=>{if(!b.textContent.trim()&&!b.getAttribute('aria-label'))b.setAttribute('aria-label',b.title||b.className);});
+  if(KB_PAGE.name==='index'){
+    await nativeTaskList();
+    if(nativeSession.kid&&!nativeSession.lmid){const kit=await Core.instance().ajax().get('kitBuildApi/openKitMap/'+nativeSession.kid),draft=await Core.instance().ajax().post('kitBuildApi/getLastDraftLearnerMapOfUser',{kid:nativeSession.kid});App.parseKitMapOptions(kit);await nativeApp.openLearnerMap(kit,draft);}
+  }
+  if(client.user.teacher)nativeTeacherControls();
+  document.querySelectorAll('.status-panel').forEach(el=>{el.tabIndex=0;el.setAttribute('aria-label','マップと利用者の状態');});
+  if(KB_PAGE.name==='dynamic')nativeDynamicControls();
+  const labelControls=()=>{document.querySelectorAll('input:not([type=hidden]),select,textarea').forEach(el=>{if(!el.getAttribute('aria-label')&&!el.labels?.length)el.setAttribute('aria-label',el.placeholder||el.name||el.id||'入力');});document.querySelectorAll('button').forEach(el=>{if(!el.getAttribute('aria-label'))el.setAttribute('aria-label',el.textContent.trim()||el.getAttribute('data-tippy-content')||el.title||el.className);});document.querySelectorAll('[role=button]').forEach(el=>{if(el.querySelector('input,button,select')){el.setAttribute('role','group');el.tabIndex=0;el.onkeydown=e=>{if(e.key==='Enter')el.click();};}});};labelControls();new MutationObserver(labelControls).observe(nativeDOM('workspace'),{childList:true,subtree:true});
+  nativeDOM('native-ready').textContent='ready';
+}
+async function nativeTaskList(){const r=await client.call('native.api',{route:'kitBuildApi/getKitListOfGroups/ALL'}),host=nativeDOM('task-list');host.replaceChildren();for(const task of r.coreResult){const a=document.createElement('a');a.href='index.html?kid='+encodeURIComponent(task.kid);a.textContent=task.name;host.append(a,document.createTextNode(' '));}}
+function nativeDownload(name,text){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([text],{type:'text/csv;charset=utf-8'}));a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function nativeTeacherControls(){
+  const host=nativeDOM('task-list');
+  if(KB_PAGE.name==='teacher'){
+    const label=document.createElement('label');label.textContent='ゴールマップ JSON 取込 ';const input=document.createElement('input');input.type='file';input.id='native-import';input.accept='.json,application/json';label.append(input);host.append(label);
+    input.onchange=()=>nativeCatch((async()=>{const raw=JSON.parse(await input.files[0].text()),data=Object.assign({},raw.map||{},raw);delete data.map;data.cmid=null;const map=await Core.instance().ajax().post('kitBuildApi/saveConceptMap',{data:Core.compress(data)});nativeApp.setConceptMap(map);nativeCanvas.reset();nativeCanvas.cy.add(KitBuildUI.composeConceptMap(map));nativeCanvas.applyElementStyle();await nativeCanvas.toolbar.tools.get(KitBuildToolbar.CAMERA).fit(null,{duration:0});nativeApp.logger.setConceptMapId(map.map.cmid);nativeApp.logger.log('import-map',map.map,null,{includeMapData:true});})());
+  }
+  const csv=document.createElement('button');csv.id='native-submissions-csv';csv.textContent='提出 CSV';csv.onclick=()=>nativeCatch((async()=>{let offset=0,part=0;do{const r=await Core.instance().ajax().post('gasApi/submissionsCsv',{offset});nativeDownload('submissions-'+(++part)+'.csv',r.csv);offset=r.next;}while(offset!==null);})());host.append(csv);
+  const date=document.createElement('input');date.id='native-log-date';date.type='text';date.value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).replaceAll('-','');date.setAttribute('aria-label','ログ日付 YYYYMMDD');host.append(date);
+  const logs=document.createElement('button');logs.id='native-logs-csv';logs.textContent='ログ CSV';logs.onclick=()=>nativeCatch((async()=>{let offset=0,index=0;do{const r=await client.call('logs.csv',{date:date.value,offset});const cell=v=>'"'+String(v??'').replace(/^[\s\u0000-\u001f]*[=+@-]/,s=>"'"+s).replaceAll('"','""')+'"';nativeDownload('logs-'+date.value+'-'+(++index)+'.csv','\uFEFF'+[r.header,...r.rows].map(row=>row.map(cell).join(',')).join('\r\n'));offset=r.next;}while(offset!==null);})());host.append(logs);
+}
+function nativeDynamicControls(){
+  $('.bt-proposition-set-analysis').on('click',()=>{$('.bt-teacher-map').trigger('click');$('.bt-group-map').trigger('click');});
+  $('.bt-map-dev-chart').on('click',()=>nativeCatch((async()=>{
+    const selected=document.querySelector('#list-learnermap .learnermap.active');if(!selected)throw new Error('学習者マップを選択してください');const lm=nativeApp.learnerMaps.get(selected.dataset.lmid),uid=lm.map.author,day=nativeDOM('native-log-date').value;let offset=0,events=[];
+    do{const r=await Core.instance().ajax().post('gasApi/history',{date:day,offset,user_id:uid,snapshots:true});events.push(...r.items);offset=r.next;}while(offset!==null);
+    events.sort((a,b)=>a.client_ts-b.client_ts||a.event_id.localeCompare(b.event_id));
+    let dialog=nativeDOM('native-history');if(dialog)dialog.remove();dialog=document.createElement('dialog');dialog.id='native-history';dialog.setAttribute('aria-label','マップの変化と再生');const title=document.createElement('h2');title.textContent=uid+' のマップの変化';dialog.append(title);const close=document.createElement('button');close.textContent='閉じる';close.onclick=()=>dialog.close();dialog.append(close);
+    const table=document.createElement('table');table.className='table table-sm';const caption=document.createElement('caption');caption.textContent='時系列のノード・接続・命題数。操作を選ぶと元のキャンバスに再生します。';table.append(caption);const head=document.createElement('tr');for(const text of ['操作','時刻','概念','リンク','接続','命題']){const th=document.createElement('th');th.textContent=text;head.append(th);}table.append(head);
+    for(const e of events){const tr=document.createElement('tr'),td=document.createElement('td'),button=document.createElement('button');button.textContent=e.action;button.onclick=()=>nativeCatch((async()=>{const r=await Core.instance().ajax().post('gasApi/history',{date:day,offset:0,user_id:uid,event_id:e.event_id});let found=r.items.find(x=>x.event_id===e.event_id),next=r.next;while(!found&&next!==null){const chunk=await Core.instance().ajax().post('gasApi/history',{date:day,offset:next,user_id:uid,event_id:e.event_id});found=chunk.items.find(x=>x.event_id===e.event_id);next=chunk.next;}if(!found?.map)throw new Error('スナップショットがありません');nativeCanvas.reset();nativeCanvas.cy.add(Core.decompress(found.map));nativeCanvas.applyElementStyle();await nativeCanvas.toolbar.tools.get(KitBuildToolbar.CAMERA).fit(null,{duration:0});dialog.close();})());td.append(button);tr.append(td);for(const v of [new Date(e.client_ts).toLocaleTimeString(),e.nc,e.nl,e.ne,e.np]){const cell=document.createElement('td');cell.textContent=v;tr.append(cell);}table.append(tr);}dialog.append(table);document.body.append(dialog);dialog.showModal();
+  })()));
+}
+nativeDOM('logout').onclick=()=>nativeCatch(client.logout());
+window.addEventListener('online',()=>client.flush());
+document.addEventListener('visibilitychange',()=>{if(client.user&&document.visibilityState==='visible')client.flush();});
+nativeCatch(client.init());
+</script></body></html>

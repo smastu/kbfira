@@ -1,0 +1,75 @@
+{
+  "checked": "2026-11-05T06:58:12.259Z",
+  "entries": [
+    {
+      "name": "jquery",
+      "url": "https://raw.githubusercontent.com/jquery/jquery/3.6.0/LICENSE.txt",
+      "sha256": "d4db9ebe6f29f5168eac45ad713f055623ac5d0dcd5ba92da23d650ae012020d"
+    },
+    {
+      "name": "bootstrap",
+      "url": "https://raw.githubusercontent.com/twbs/bootstrap/v5.0.2/LICENSE",
+      "sha256": "5b30317c9c35bb6f05101c501de866cc6852ab9b655dcf5941733f6644c3ebd0"
+    },
+    {
+      "name": "icons",
+      "url": "https://raw.githubusercontent.com/twbs/icons/v1.7.2/LICENSE",
+      "error": "HTTP 404"
+    },
+    {
+      "name": "pako",
+      "url": "https://raw.githubusercontent.com/nodeca/pako/2.0.4/LICENSE",
+      "sha256": "a04665b3b2de56c66730c1f720f528175739e4104f79073614aa611da1e85539"
+    },
+    {
+      "name": "fcose",
+      "url": "https://raw.githubusercontent.com/iVis-at-Bilkent/cytoscape.js-fcose/master/LICENSE",
+      "sha256": "2837634f403949215760fcdd2fa1ed0c64875d02099ecc8318c704b852f1421d"
+    },
+    {
+      "name": "layoutBase",
+      "url": "https://raw.githubusercontent.com/iVis-at-Bilkent/layout-base/master/LICENSE",
+      "sha256": "eabb762d8a95109a39c9be3247325529a5239a7aca327d909c3ccdc41f3a06bf"
+    },
+    {
+      "name": "coseBase",
+      "url": "https://raw.githubusercontent.com/iVis-at-Bilkent/cose-base/master/LICENSE",
+      "sha256": "5fb3cf4a14c3c5af6e473a192df8bca10c77754e3a0c6492c79fb92a76a5478a"
+    },
+    {
+      "name": "huebee",
+      "url": "https://raw.githubusercontent.com/metafizzy/huebee/master/LICENSE.md",
+      "error": "HTTP 404"
+    },
+    {
+      "name": "anime",
+      "url": "https://raw.githubusercontent.com/juliangarnier/anime/v3.2.1/LICENSE.md",
+      "sha256": "f825f5c75974fda9ae806de442770f3d7686cf86245e78fa0c3c39913184af95"
+    },
+    {
+      "name": "sortable",
+      "url": "https://raw.githubusercontent.com/SortableJS/Sortable/1.10.2/LICENSE",
+      "sha256": "199071e94a4d6ba6f634acd6020842efc55161b9fb639a432c50da687781219d"
+    },
+    {
+      "name": "showdown",
+      "url": "https://raw.githubusercontent.com/showdownjs/showdown/1.9.1/license.txt",
+      "sha256": "4a6fe13fbd108daad0050c3a3e0c91befe36e77d3f7b5e8be5bf626780314a94"
+    },
+    {
+      "name": "highlight",
+      "url": "https://raw.githubusercontent.com/highlightjs/highlight.js/11.3.1/LICENSE",
+      "sha256": "6c081431591d9df696c82dc598fe1423765b8a299b200ed00b281afd0f64c490"
+    },
+    {
+      "name": "simplemde",
+      "url": "https://raw.githubusercontent.com/sparksuite/simplemde-markdown-editor/master/LICENSE",
+      "sha256": "22b0ff2f581623a0e8549ed2c00d74ffeae14016fb39aaa7ade8829e1d07a152"
+    },
+    {
+      "name": "sheetjs",
+      "url": "https://cdn.sheetjs.com/xlsx-0.19.1/package/LICENSE",
+      "sha256": "4d2a38ac35cda06a555c84074a819d413339cd3691b822cae50f8f322fe01f64"
+    }
+  ]
+}

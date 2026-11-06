@@ -771,6 +771,9 @@ const KitBuildCollab={enableControl(){},room(){return null;}};
 Logger.shouldSkip=()=>false;
 // 原版は mixed の既存リンク→追加概念を lConcepts で見つけられない。
 // 入力の概念辞書だけ補完し、保存構造・比較規則・原版ソースは変えない。
+// 集団マップ：Mixed で学習者が追加した概念（concepts_ext）はゴールマップに無いため、原版は「存在しないノードへのエッジ」で例外になる。描く前に足りない概念ノードを補う。
+function nativeExtConcepts(){const out=new Map();try{const maps=window.StaticAnalyzerApp?.inst?.learnerMaps||window.nativeApp?.learnerMaps;if(maps)maps.forEach(lm=>(lm.concepts_ext||[]).forEach(c=>{if(!out.has(c.cid))out.set(c.cid,c);}));}catch(_){}return out;}
+if(typeof Analyzer!=='undefined'&&Analyzer.showGroupCompareMap){const nativeOriginalGroupMap=Analyzer.showGroupCompareMap;Analyzer.showGroupCompareMap=function(groupCompare,cy,...rest){try{const ext=nativeExtConcepts(),need=new Set();['match','miss','excess'].forEach(k=>(groupCompare[k]||[]).forEach(m=>{if(m)[m.sid,m.tid].forEach(id=>{if(id)need.add(id);});}));const add=[];need.forEach(id=>{if(cy.getElementById(id).length)return;const c=ext.get(id);if(!c)return;let data={};try{data=JSON.parse(c.data||'{}');}catch(_){}add.push({group:'nodes',data:Object.assign({},data,{id:c.cid,label:c.label,type:'concept',extra:true}),position:{x:Number(c.x)||0,y:Number(c.y)||0}});});if(add.length)cy.add(add);}catch(e){console.warn('nativeExtConcepts',e);}return nativeOriginalGroupMap.call(this,groupCompare,cy,...rest);};}
 const nativeOriginalCompose=Analyzer.composePropositions;
 Analyzer.composePropositions=function(map){const concepts=map?.concepts;if(map?.conceptMap&&map.concepts_ext?.length)map.concepts=concepts.concat(map.concepts_ext.filter(c=>!concepts.some(v=>v.cid===c.cid)));try{return nativeOriginalCompose.call(this,map);}finally{if(map&&concepts)map.concepts=concepts;}};
 const originalBeacon=navigator.sendBeacon.bind(navigator);
